@@ -29,7 +29,7 @@ namespace lavalaser
         //Block that the laser is made out of
         static BlockID lavaLaserBlock = 11;
         static ushort maxLaserLength = 8;
-        static double cooldown = 0.8;
+        static double cooldown = 0.7;
 
         const string laserExtrasKey = "LASER_DATA";
          
@@ -127,11 +127,10 @@ namespace lavalaser
                     int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
                     int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
 
-                    if (opponentLegPos == blockPosition || opponentHeadPos == blockPosition)
-                    {
+                    if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
+                    {                      
                         p.level.Message($"{opponent.ColoredName} &3was killed by {p.ColoredName}!");
-                        opponent.SendPosition(p.level.SpawnPos, opponent.Rot);
-
+                        opponent.SendPosition(p.level.SpawnPos, opponent.Rot);                                           
                     }
                 }
             }
@@ -187,20 +186,25 @@ namespace lavalaser
             {
                 index = p.level.PosToInt(pos.X, pos.Y, pos.Z);
 
-                // Laser will be interrupted if there is a block in front of it                      
-                if (p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ)) != Block.Air)
+                // Laser will be interrupted if there is a block in front of it
+                BlockID nextBlock = p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ));
+                
+                if (nextBlock == Block.Air || nextBlock == lavaLaserBlock)
+                {
+                    p.level.AddUpdate(index, lavaLaserBlock);
+                    laserBlockIndexes.Add(index);
+
+                    pos.X = (ushort)(pos.X + incrementX);
+                    pos.Y = (ushort)(pos.Y + incrementY);
+                    pos.Z = (ushort)(pos.Z + incrementZ);
+                }
+
+                else
                 {
                     p.level.AddUpdate(index, lavaLaserBlock);
                     laserBlockIndexes.Add(index);
                     break;
-                }
-
-                p.level.AddUpdate(index, lavaLaserBlock);
-                laserBlockIndexes.Add(index);
-
-                pos.X = (ushort)(pos.X + incrementX);
-                pos.Y = (ushort)(pos.Y + incrementY);
-                pos.Z = (ushort)(pos.Z + incrementZ);
+                }            
             }
         }
 
