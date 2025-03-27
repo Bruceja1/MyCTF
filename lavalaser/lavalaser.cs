@@ -31,7 +31,7 @@ namespace lavalaser
         static ushort maxLaserLength = 8;
         static double cooldown = 0.2;
 
-        private const string laserExtrasKey = "LASER_DATA";
+        const string laserExtrasKey = "LASER_DATA";
          
         public override void Load(bool startup)
         {
@@ -52,9 +52,10 @@ namespace lavalaser
             OnBlockHandlersUpdatedEvent.Unregister(OnBlockHandlersUpdated);
         }
              
-        static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
+        private static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
         {
             int blockIndex = p.level.PosToInt(x, y, z);
+            List<int> laserBlockIndexes = new List<int>();
 
             if (!p.Extras.Contains(laserExtrasKey))
             {
@@ -67,77 +68,30 @@ namespace lavalaser
                 return;
             }
 
-            if (result == ChangeResult.Modified)
+            //if (result == ChangeResult.Modified)
+            
+            BlockID newBlock = p.level.GetBlock(x, y, z);
+            if (newBlock != igniteBlock)
             {
-                BlockID newBlock = p.level.GetBlock(x, y, z);
-                if (newBlock == igniteBlock)
-                {
-                    int index = p.level.PosToInt(x, y, z);
-                    Vec3U16 pos = new Vec3U16();
-                    pos.X = x; pos.Y = y; pos.Z = z;
-                    List<int> laserBlockIndexes = new List<int>();
-
-                    //Check in which direction the laser should be fired
-                    string direction = GetPlayerDirection(p, p.Rot.RotY);
-                    int incrementX = 0;
-                    int incrementY = 0;
-                    int incrementZ = 0;
-                    switch (direction)
-                    {
-                        case "North":
-                            incrementZ = -1;
-                            break;
-                        case "East":
-                            incrementX = 1;
-                            break;
-                        case "South":
-                            incrementZ = 1;
-                            break;
-
-                        default:
-                            incrementX = -1;
-                            break;
-                    }
-
-                    // Place line of lava blocks
-                    for (int i = 0; i < maxLaserLength; i++)
-                    {
-                        index = p.level.PosToInt(pos.X, pos.Y, pos.Z);
-
-                        // Laser will be interrupted if there is a block in front of it                      
-                        if (p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ)) != Block.Air)
-                        {
-                            p.level.AddUpdate(index, lavaLaserBlock);
-                            laserBlockIndexes.Add(index);
-                            break;
-                        }
-                        
-                        p.level.AddUpdate(index, lavaLaserBlock);
-                        laserBlockIndexes.Add(index);
-
-                        pos.X = (ushort)(pos.X + incrementX);
-                        pos.Y = (ushort)(pos.Y + incrementY);
-                        pos.Z = (ushort)(pos.Z + incrementZ);
-                    }
-
-                    KillEnemy(p, laserBlockIndexes);
-
-
-
-                    p.Extras[laserExtrasKey] = DateTime.Now;
-
-                    /*
-                    if (newBlock != Block.Air)
-                    {
-                        p.Message("{4} placed block ID {0} at ({1}, {2}, {3})", newBlock, x, y, z, p.ColoredName);
-                        Logger.Log(LogType.UserActivity, $"{p.ColoredName} placed block {newBlock} at {x}, {y}, {z}");
-                    } 
-                    */
-                }
+                return;
             }
+
+            DoLaser(p, laserBlockIndexes, x, y ,z);
+
+            KillEnemy(p, laserBlockIndexes);
+
+            p.Extras[laserExtrasKey] = DateTime.Now;
+
+            /*
+            if (newBlock != Block.Air)
+            {
+                p.Message("{4} placed block ID {0} at ({1}, {2}, {3})", newBlock, x, y, z, p.ColoredName);
+                Logger.Log(LogType.UserActivity, $"{p.ColoredName} placed block {newBlock} at {x}, {y}, {z}");
+            } 
+            */   
         }
 
-        static string GetPlayerDirection(Player p, int yaw)
+        private static string GetPlayerDirection(Player p, int yaw)
         {
             string direction;
                     
@@ -198,7 +152,57 @@ namespace lavalaser
             return false;
         }
 
-        static void OnBlockHandlersUpdated(Level lvl, BlockID block)
+        private static void DoLaser(Player p, List<int> laserBlockIndexes, ushort x, ushort y, ushort z)
+        {
+            int index = p.level.PosToInt(x, y, z);
+            Vec3U16 pos = new Vec3U16();
+            pos.X = x; pos.Y = y; pos.Z = z;
+
+            //Check in which direction the laser should be fired
+            string direction = GetPlayerDirection(p, p.Rot.RotY);
+            int incrementX = 0;
+            int incrementY = 0;
+            int incrementZ = 0;
+            switch (direction)
+            {
+                case "North":
+                    incrementZ = -1;
+                    break;
+                case "East":
+                    incrementX = 1;
+                    break;
+                case "South":
+                    incrementZ = 1;
+                    break;
+
+                default:
+                    incrementX = -1;
+                    break;
+            }
+
+            // Place line of lava blocks
+            for (int i = 0; i < maxLaserLength; i++)
+            {
+                index = p.level.PosToInt(pos.X, pos.Y, pos.Z);
+
+                // Laser will be interrupted if there is a block in front of it                      
+                if (p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ)) != Block.Air)
+                {
+                    p.level.AddUpdate(index, lavaLaserBlock);
+                    laserBlockIndexes.Add(index);
+                    break;
+                }
+
+                p.level.AddUpdate(index, lavaLaserBlock);
+                laserBlockIndexes.Add(index);
+
+                pos.X = (ushort)(pos.X + incrementX);
+                pos.Y = (ushort)(pos.Y + incrementY);
+                pos.Z = (ushort)(pos.Z + incrementZ);
+            }
+        }
+
+        private static void OnBlockHandlersUpdated(Level lvl, BlockID block)
         {
             if (lvl.name != physicsLevelName)
             {
@@ -212,7 +216,7 @@ namespace lavalaser
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
         }
 
-        static void DoCleanup(Level lvl, ref PhysInfo C)
+        private static void DoCleanup(Level lvl, ref PhysInfo C)
         {
             // Remove lava block
             lvl.AddUpdate(C.Index, Block.Air, default(PhysicsArgs));
