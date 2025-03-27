@@ -57,11 +57,6 @@ namespace lavalaser
             int blockIndex = p.level.PosToInt(x, y, z);
             List<int> laserBlockIndexes = new List<int>();
 
-            if (!p.Extras.Contains(laserExtrasKey))
-            {
-                p.Extras[laserExtrasKey] = DateTime.Now;
-            }
-
             if (IsOnCooldown(p))
             {
                 p.level.AddUpdate(blockIndex, Block.Air);
@@ -138,6 +133,12 @@ namespace lavalaser
 
         private static bool IsOnCooldown(Player p)
         {
+            if (!p.Extras.Contains(laserExtrasKey))
+            {
+                p.Extras[laserExtrasKey] = DateTime.Now;
+                return false;
+            }
+
             // Source: https://www.bytehide.com/blog/datetime-now-vs-datetime-utcnow-csharp
             DateTime startTime = (DateTime)p.Extras[laserExtrasKey];
             DateTime endTime = DateTime.Now;
