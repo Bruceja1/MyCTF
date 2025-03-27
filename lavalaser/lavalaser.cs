@@ -190,7 +190,7 @@ namespace lavalaser
                 // Laser will be interrupted if there is a block in front of it
                 BlockID nextBlock = p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ));
                 
-                if (nextBlock == Block.Air || nextBlock == lavaLaserBlock)
+                if (nextBlock == Block.Air || nextBlock == lavaLaserBlock || nextBlock == igniteBlock)
                 {
                     p.level.AddUpdate(index, lavaLaserBlock);
                     laserBlockIndexes.Add(index);
