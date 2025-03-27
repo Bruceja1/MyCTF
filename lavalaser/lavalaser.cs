@@ -28,7 +28,10 @@ namespace lavalaser
         static BlockID igniteBlock = 13;
         //Block that the laser is made out of
         static BlockID lavaLaserBlock = 11;
-        static ushort maxLaserLength = 8;       
+        static ushort maxLaserLength = 8;
+        static double cooldown = 0.2;
+
+        private const string laserExtrasKey = "LASER_DATA";
          
         public override void Load(bool startup)
         {
@@ -51,6 +54,19 @@ namespace lavalaser
              
         static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
         {
+            int blockIndex = p.level.PosToInt(x, y, z);
+
+            if (!p.Extras.Contains(laserExtrasKey))
+            {
+                p.Extras[laserExtrasKey] = DateTime.Now;
+            }
+
+            if (IsOnCooldown(p))
+            {
+                p.level.AddUpdate(blockIndex, Block.Air);
+                return;
+            }
+
             if (result == ChangeResult.Modified)
             {
                 BlockID newBlock = p.level.GetBlock(x, y, z);
@@ -104,21 +120,11 @@ namespace lavalaser
                         pos.Z = (ushort)(pos.Z + incrementZ);
                     }
 
-                    foreach (int blockPosition in laserBlockIndexes)
-                    {
-                        foreach (Player opponent in p.level.players)
-                        {
-                            int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
-                            int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
+                    KillEnemy(p, laserBlockIndexes);
 
-                            if (opponentLegPos == blockPosition || opponentHeadPos == blockPosition)
-                            {
-                                p.level.Message($"{opponent.ColoredName} &3was killed by {p.ColoredName}!");
-                                opponent.SendPosition(p.level.SpawnPos, opponent.Rot);
-                                
-                            }
-                        }
-                    }
+
+
+                    p.Extras[laserExtrasKey] = DateTime.Now;
 
                     /*
                     if (newBlock != Block.Air)
@@ -156,6 +162,40 @@ namespace lavalaser
             }           
 
             return direction;
+        }
+
+        private static void KillEnemy(Player p, List<int> blockIndexes)
+        {
+            foreach (int blockPosition in blockIndexes)
+            {
+                foreach (Player opponent in p.level.players)
+                {
+                    int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
+                    int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
+
+                    if (opponentLegPos == blockPosition || opponentHeadPos == blockPosition)
+                    {
+                        p.level.Message($"{opponent.ColoredName} &3was killed by {p.ColoredName}!");
+                        opponent.SendPosition(p.level.SpawnPos, opponent.Rot);
+
+                    }
+                }
+            }
+        }
+
+        private static bool IsOnCooldown(Player p)
+        {  
+            DateTime startTime = (DateTime)p.Extras[laserExtrasKey];
+            DateTime endTime = DateTime.Now;
+            TimeSpan elapsedTime = endTime - startTime;
+            p.Message(elapsedTime.TotalSeconds.ToString());
+
+            if (elapsedTime.Seconds < cooldown)
+            {               
+                return true;
+            }
+
+            return false;
         }
 
         static void OnBlockHandlersUpdated(Level lvl, BlockID block)
