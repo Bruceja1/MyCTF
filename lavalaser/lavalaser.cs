@@ -29,7 +29,7 @@ namespace lavalaser
         //Block that the laser is made out of
         static BlockID lavaLaserBlock = 11;
         static ushort maxLaserLength = 8;
-        static double cooldown = 0.2;
+        static double cooldown = 0.8;
 
         const string laserExtrasKey = "LASER_DATA";
          
@@ -138,13 +138,15 @@ namespace lavalaser
         }
 
         private static bool IsOnCooldown(Player p)
-        {  
+        {
+            // Source: https://www.bytehide.com/blog/datetime-now-vs-datetime-utcnow-csharp
             DateTime startTime = (DateTime)p.Extras[laserExtrasKey];
             DateTime endTime = DateTime.Now;
             TimeSpan elapsedTime = endTime - startTime;
+
             p.Message(elapsedTime.TotalSeconds.ToString());
 
-            if (elapsedTime.Seconds < cooldown)
+            if (elapsedTime < TimeSpan.FromSeconds(cooldown))
             {               
                 return true;
             }
