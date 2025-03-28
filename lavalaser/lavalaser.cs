@@ -23,7 +23,7 @@ namespace lavalaser
         public override string creator { get { return author; } }
 
         //The level we want to add a custom physics block to.
-        static string physicsLevelName = "bruceja5";
+        static string physicsLevelName = "bruceja7";
         //Block that sets off the laser
         static BlockID igniteBlock = 13;
         //Block that the laser is made out of
@@ -123,9 +123,10 @@ namespace lavalaser
                     int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
 
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
-                    {                      
-                        p.level.Message($"{opponent.ColoredName} &3was killed by {p.ColoredName}!");
-                        opponent.SendPosition(p.level.SpawnPos, opponent.Rot);                                           
+                    {
+                        string deathMessage = $"{opponent.ColoredName} &3was killed by {p.ColoredName}!";
+                        //opponent.SendPosition(p.level.SpawnPos, opponent.Rot);     
+                        opponent.HandleDeath(4, deathMessage);
                     }
                 }
             }
