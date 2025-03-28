@@ -11,6 +11,7 @@ using MCGalaxy.Levels.IO;
 using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
+using MCGalaxy.Modules.Games.MyCTF;
 
 namespace lavalaser
 {
@@ -122,11 +123,11 @@ namespace lavalaser
                     int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
                     int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
 
+                    
+
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
                     {
-                        string deathMessage = $"{opponent.ColoredName} &3was killed by {p.ColoredName}!";
-                        //opponent.SendPosition(p.level.SpawnPos, opponent.Rot);     
-                        opponent.HandleDeath(4, deathMessage);
+                        MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
                     }
                 }
             }
