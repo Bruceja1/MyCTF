@@ -127,7 +127,15 @@ namespace lavalaser
 
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
                     {
-                        MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
+                        try
+                        {
+                            // Throws error when no MyCTF game in progress
+                            MyCTFGame.Instance.HandleWeaponCollision(p, opponent); 
+                        }
+                        catch (Exception e) 
+                        {
+                            return;
+                        }                     
                     }
                 }
             }
