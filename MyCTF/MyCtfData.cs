@@ -1,0 +1,20 @@
+﻿using MCGalaxy.Maths;
+
+namespace MCGalaxy.Modules.Games.MyCTF;
+
+internal sealed class MyCtfData
+{
+    public int Captures;
+
+    public int Tags;
+
+    public int Points;
+
+    public bool HasFlag;
+
+    public bool TagCooldown;
+
+    public bool TeamChatting;
+
+    public Vec3S32 LastHeadPos;
+}

@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.12.35527.113 d17.12
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lavalaser", "lavalaser\lavalaser.csproj", "{96011CBD-941E-4111-BB4F-FBF4D285C608}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCTF", "MyCTF\MyCTF.csproj", "{9F9165F9-D4FE-4138-9C87-B428C2A14B99}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{96011CBD-941E-4111-BB4F-FBF4D285C608}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96011CBD-941E-4111-BB4F-FBF4D285C608}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96011CBD-941E-4111-BB4F-FBF4D285C608}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C71C7FF5-0F5B-4F91-B491-41BD7F26AFFC}
 	EndGlobalSection
 EndGlobal
