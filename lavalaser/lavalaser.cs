@@ -12,6 +12,7 @@ using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
 using MCGalaxy.Modules.Games.MyCTF;
+using MyCTF;
 
 namespace lavalaser
 {
@@ -130,7 +131,9 @@ namespace lavalaser
                         try
                         {
                             // Throws error when no MyCTF game in progress
-                            MyCTFGame.Instance.HandleWeaponCollision(p, opponent); 
+                            // MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
+                            OnWeaponContactEvent.Call(p, opponent);
+                            
                         }
                         catch (Exception e) 
                         {

@@ -335,6 +335,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnTabListEntryAdded>.Register(HandleTabListEntryAdded, Priority.High);
         IEvent<OnSentMap>.Register(HandleSentMap, Priority.High);
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
+        IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
         base.HookEventHandlers();
     }
 
@@ -348,6 +349,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnTabListEntryAdded>.Unregister(HandleTabListEntryAdded);
         IEvent<OnSentMap>.Unregister(HandleSentMap);
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
+        IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
         base.UnhookEventHandlers();
     }
 
@@ -651,7 +653,7 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    public void HandleWeaponCollision(Player p, Player opponent)
+    public void HandleWeaponContact(Player p, Player opponent)
     {
         MyCtfTeam playerTeam = TeamOf(p);
         MyCtfTeam opponentTeam = TeamOf(opponent);
