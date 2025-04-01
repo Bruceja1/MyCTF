@@ -150,6 +150,7 @@ public class MyCTFGame : RoundsGame
         p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
         p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
         p.Message($"LastHeadPos: {playerData.LastHeadPos.ToString()}");
+        p.Message($"Your team is: {TeamOf(p).Name}");
     }
 
     protected override void StartGame()
@@ -221,6 +222,7 @@ public class MyCTFGame : RoundsGame
             ctfTeam.Members.Remove(p);
             DropFlag(p, ctfTeam);
         }
+        ClearData(p); // For debugging only
     }
 
     private void AutoAssignTeam(Player p)
@@ -243,6 +245,11 @@ public class MyCTFGame : RoundsGame
 
     private void JoinTeam(Player p, MyCtfTeam team)
     {
+        if (team.Members.Count > Opposing(team).Members.Count)
+        {
+            p.Message("&cThis team is full!");
+            return;           
+        }
         Get(p).HasFlag = false;
         team.Members.Add(p);
         Map.Message(p.ColoredName + " &Sjoined the " + team.ColoredName + " &Steam");
@@ -337,6 +344,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
         IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
         base.HookEventHandlers();
+        Map.Message("Event handlers hooked");
     }
 
     protected override void UnhookEventHandlers()
@@ -351,6 +359,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
         IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
         base.UnhookEventHandlers();
+        Map.Message("Event handlers unhooked");
     }
 
     private void HandlePlayerDied(Player p, ushort deathblock, ref TimeSpan cooldown)
@@ -404,6 +413,14 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map)
         {
+            return;
+        }
+
+        if (!RoundInProgress)
+        {
+            p.Message("The round has not started yet!");
+            p.RevertBlock(x, y, z);
+            cancel = true;
             return;
         }
 
@@ -653,11 +670,18 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    public void HandleWeaponContact(Player p, Player opponent)
+    private void HandleWeaponContact(Player p, Player opponent)
     {
+        // On plugin reload this method is not being called anymore
+        // Reloading lavalaser plugin does not fix it
+        // Loading the lavalaser plugin after starting MyCTF does not fix it
+
+        Map.Message("HandleWeaponContact called"); // Debugging
+        p.Message("HandleWeaponContact called");
+
         MyCtfTeam playerTeam = TeamOf(p);
         MyCtfTeam opponentTeam = TeamOf(opponent);
-        p.Message("Your team is {0}", playerTeam.Name);
+        p.Message("Your team is {0}", playerTeam.Name); // Debugging
         p.Message("Opponent's team is {0}", opponentTeam.Name);
 
         if (playerTeam != opponentTeam)
@@ -667,7 +691,8 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    protected void Countdown()
+    // TODO: use built-in CpeMessage announce type
+    protected bool Countdown()
     {
         DateTime startTime = DateTime.Now;
         DateTime now = DateTime.Now;
@@ -677,9 +702,9 @@ public class MyCTFGame : RoundsGame
 
         while (elapsedTime.Seconds < countdownTimer)
         {
-            if (!Running)
+            if (!Running | RoundInProgress)
             {
-                return;
+                return false;
             }
             message = $"global &bMatch starts in &f{countdownTimer - elapsedTime.Seconds} &bseconds!";
 
@@ -712,6 +737,7 @@ public class MyCTFGame : RoundsGame
         if (playerCount >= 2)
         {
             Command.Find("Announce").Use(Player.Console, $"global &aGood luck!");
+            return true;
         }
 
         else
@@ -723,6 +749,7 @@ public class MyCTFGame : RoundsGame
                 Thread.Sleep(5000);
                 Countdown();
             }
+            return false;
         }
     }
 
@@ -731,6 +758,11 @@ public class MyCTFGame : RoundsGame
     // Spaghetti code but it works tho
     public override void Start(Player p, string map, int rounds)
     {
+        if (rounds == 0)
+        {
+            rounds = int.MaxValue;
+        }
+
         map = GetStartMap(p, map);
         if (map == null)
         {
@@ -752,19 +784,11 @@ public class MyCTFGame : RoundsGame
         IGame.RunningGames.Add(this);
         OnStateChangedEvent.Call(this);
         HookEventHandlers();
-        Countdown();
-        Player[] items = PlayerInfo.Online.Items;
-        Player[] array = items;
-        foreach (Player player in array)
-        {
-            if (player.level == Map)
-            {
-                PlayerJoinedGame(player);
-            }
-        }
-
+        DoGrace();
+       
         Server.StartThread(out var thread, "Game_ " + GameName, RunGame);
         Utils.SetBackgroundMode(thread);
+        RunGame();
     }
 
     private void RunGame()
@@ -813,5 +837,50 @@ public class MyCTFGame : RoundsGame
         }
 
         IGame.RunningGames.Remove(this);
+    }
+
+    public static void ClearData(Player p) // Debugging
+    {
+        p.Extras.Remove("MCG_MYCTF_DATA");
+        p.Message("p.Extras data cleared");
+    }
+
+    public void HandleJoinCmd(Player p, string[] message)
+    {
+
+
+        if (message[1].CaselessEq("Blue"))
+        {
+            JoinTeam(p, Blue);
+        }
+
+        else if (message[1].CaselessEq("Red"))
+        {
+            JoinTeam(p, Red);
+        }
+
+        else
+        {
+            p.Message("&bPlease enter a valid team name. Usage: &a/MyCTF &ejoin blue/red");
+        }
+    }
+
+    private void DoGrace()
+    {
+        if (RoundInProgress)
+        {
+            return;
+        }
+        Countdown();
+
+        Player[] items = PlayerInfo.Online.Items;
+        Player[] array = items;
+        foreach (Player player in array)
+        {
+            if (player.level == Map)
+            {
+                PlayerJoinedGame(player);
+            }
+        }
     }
 }

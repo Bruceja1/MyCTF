@@ -18,6 +18,56 @@ internal sealed class CmdMyCTF : RoundsGameCmd
         new CommandPerm(LevelPermission.Operator, "can manage CTF")
     };
 
+    public override void Use(Player p, string message, CommandData data)
+    {
+        RoundsGame game = Game;
+        if (message.CaselessEq("go"))
+        {
+            HandleGo(p, game);
+        }
+        else if (Command.IsInfoAction(message))
+        {
+            HandleStatus(p, game);
+        }
+
+        else if (message.CaselessStarts("join"))
+        {
+            p.Message("Join command used");
+            HandleJoin(p, message);
+        }
+
+        else if (CheckExtraPerm(p, data, 1))
+        {
+            if (message.CaselessEq("start") || message.CaselessStarts("start "))
+            {
+                HandleStart(p, game, message.SplitSpaces());
+            }
+            else if (message.CaselessEq("end"))
+            {
+                HandleEnd(p, game);
+            }
+            else if (message.CaselessEq("stop"))
+            {
+                HandleStop(p, game);
+            }
+            else if (message.CaselessEq("add"))
+            {
+                RoundsGameConfig.AddMap(p, p.level.name, p.level.Config, game);
+            }
+            else if (Command.IsDeleteAction(message))
+            {
+                RoundsGameConfig.RemoveMap(p, p.level.name, p.level.Config, game);
+            }
+            else if (message.CaselessStarts("set ") || message.CaselessStarts("setup "))
+            {
+                HandleSet(p, game, message.SplitSpaces());
+            }
+            else
+            {
+                Help(p);
+            }
+        }
+    }
     protected override void HandleSet(Player p, RoundsGame game, string[] args)
     {
         string a = args[1];
@@ -93,6 +143,12 @@ internal sealed class CmdMyCTF : RoundsGameCmd
         return false;
     }
 
+    private void HandleJoin(Player p, string message)
+    {
+        MyCTFGame instance = MyCTFGame.Instance;
+        instance.HandleJoinCmd(p, message.SplitSpaces());
+    }
+
     public override void Help(Player p, string message)
     {
         if (message.CaselessEq("set"))
@@ -120,5 +176,6 @@ internal sealed class CmdMyCTF : RoundsGameCmd
         p.Message("&T/MyCTF set [property] &H- Sets a property. See &T/Help MyCTF set");
         p.Message("&T/MyCTF status &H- View stats of both teams");
         p.Message("&T/MyCTF go &H- Moves you to the current CTF map");
+        p.Message("&T/MyCTF join blue/red &H- Joins the specified team if it isn't full");
     }
 }

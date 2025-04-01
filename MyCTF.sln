@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LavaLaser", "lavalaser\Lava
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyCTF", "MyCTF\MyCTF.csproj", "{9F9165F9-D4FE-4138-9C87-B428C2A14B99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CmdMcDebug", "MyCTFDebug\CmdMcDebug.csproj", "{1889738F-E397-4CB1-BA73-076A264568BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F9165F9-D4FE-4138-9C87-B428C2A14B99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1889738F-E397-4CB1-BA73-076A264568BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1889738F-E397-4CB1-BA73-076A264568BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1889738F-E397-4CB1-BA73-076A264568BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1889738F-E397-4CB1-BA73-076A264568BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

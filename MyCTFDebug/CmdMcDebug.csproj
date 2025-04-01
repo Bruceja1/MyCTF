@@ -5,11 +5,11 @@
     <LangVersion>10</LangVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9F9165F9-D4FE-4138-9C87-B428C2A14B99}</ProjectGuid>
+    <ProjectGuid>{1889738F-E397-4CB1-BA73-076A264568BA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MyCTF</RootNamespace>
-    <AssemblyName>MyCTF</AssemblyName>
+    <RootNamespace>CmdMcDebug</RootNamespace>
+    <AssemblyName>CmdMcDebug</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -19,7 +19,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\</OutputPath>
+    <OutputPath>..\..\..\extra\commands\dll\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -34,12 +34,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cmdannounce">
-      <HintPath>..\..\..\extra\commands\dll\Cmdannounce.dll</HintPath>
-    </Reference>
-    <Reference Include="CmdMcDebug">
-      <HintPath>..\..\..\extra\commands\dll\CmdMcDebug.dll</HintPath>
-    </Reference>
     <Reference Include="MCGalaxy_">
       <HintPath>..\..\..\MCGalaxy_.dll</HintPath>
     </Reference>
@@ -53,13 +47,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CmdMyCTF.cs" />
-    <Compile Include="MyCTFConfig.cs" />
-    <Compile Include="MyCtfData.cs" />
-    <Compile Include="MyCTFGame.cs" />
-    <Compile Include="MyCTFMapConfig.cs" />
-    <Compile Include="MyCTFPlugin.cs" />
-    <Compile Include="MyCtfTeam.cs" />
+    <Compile Include="CmdMcDebug.cs" />
+    <Compile Include="OnWeaponContact.cs" />
+    <Compile Include="OnWeaponContactEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

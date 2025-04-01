@@ -11,8 +11,8 @@ using MCGalaxy.Levels.IO;
 using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
-using MCGalaxy.Modules.Games.MyCTF;
 using MyCTF;
+using System.Diagnostics;
 
 namespace lavalaser
 {
@@ -24,10 +24,14 @@ namespace lavalaser
         static string author = "Bruceja";
         public override string creator { get { return author; } }
 
-        //The level we want to add a custom physics block to.
+        // The level we want to add a custom physics block to.
         static string physicsLevelName = "bruceja7";
-        //Block that sets off the laser
-        static BlockID igniteBlock = 13;
+        // Block that sets off the laser
+        // For some unknown reason doesn't work with most blocks. 
+        // Block placed but won't shoot the laser until block is broken.
+        // Confirmed it does work with: gravel, sand, sapling, log, leaves, sponge, dirt, grass, wood
+        // Confirmed it doesn't work with: stone, cobblestone, glass, gold ore, coal ore, iron ore, concrete, oak_slab
+        static BlockID igniteBlock = 19;
         //Block that the laser is made out of
         static BlockID lavaLaserBlock = 11;
         static ushort maxLaserLength = 8;
@@ -65,8 +69,8 @@ namespace lavalaser
                 return;
             }
 
-            //if (result == ChangeResult.Modified)
-            
+            // if (result != ChangeResult.Modified)
+          
             BlockID newBlock = p.level.GetBlock(x, y, z);
             if (newBlock != igniteBlock)
             {
@@ -123,22 +127,21 @@ namespace lavalaser
                 {
                     int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
                     int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
-
                     
-
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
-                    {
+                    {                     
+                        // Throws error when no MyCTF game in progress
+                        // MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
                         try
                         {
-                            // Throws error when no MyCTF game in progress
-                            // MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
                             OnWeaponContactEvent.Call(p, opponent);
-                            
+                            p.Message("OnWeaponContactEvent called successfully"); // Debugging
                         }
                         catch (Exception e) 
                         {
-                            return;
-                        }                     
+                            p.Message("Failed to call OnWeaponContactEvent");
+                            p.Message(e.ToString());
+                        }                                             
                     }
                 }
             }
@@ -157,7 +160,7 @@ namespace lavalaser
             DateTime endTime = DateTime.Now;
             TimeSpan elapsedTime = endTime - startTime;
 
-            p.Message(elapsedTime.TotalSeconds.ToString());
+            //p.Message(elapsedTime.TotalSeconds.ToString());
 
             if (elapsedTime < TimeSpan.FromSeconds(cooldown))
             {               
@@ -202,7 +205,7 @@ namespace lavalaser
 
                 // Laser will be interrupted if there is a block in front of it
                 BlockID nextBlock = p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ));
-                
+
                 if (nextBlock == Block.Air || nextBlock == lavaLaserBlock || nextBlock == igniteBlock)
                 {
                     p.level.AddUpdate(index, lavaLaserBlock);
@@ -223,7 +226,7 @@ namespace lavalaser
         }
 
         private static void OnBlockHandlersUpdated(Level lvl, BlockID block)
-        {
+        {           
             if (lvl.name != physicsLevelName)
             {
                 return;
@@ -232,7 +235,8 @@ namespace lavalaser
             {
                 return;
             }
-
+            PlayerInfo.FindExact("Bruceja").Message("Block handlers updated!");
+            MsgDebugger("Block handlers updated!");
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
         }
 
