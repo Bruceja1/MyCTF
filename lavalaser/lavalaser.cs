@@ -25,7 +25,7 @@ namespace lavalaser
         public override string creator { get { return author; } }
 
         // The level we want to add a custom physics block to.
-        static string physicsLevelName = "bruceja7";
+        static string physicsLevelName = "bruceja8";
         // Block that sets off the laser
         // For some unknown reason doesn't work with most blocks. 
         // Block placed but won't shoot the laser until block is broken.
@@ -61,6 +61,16 @@ namespace lavalaser
         private static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
         {
             int blockIndex = p.level.PosToInt(x, y, z);
+
+            // Other players can't see the ignite block
+            foreach (Player player in PlayerInfo.Online.Items)
+            {
+                if (player != p)
+                {
+                    player.SendBlockchange(x, y, z, Block.Air);
+                }
+            }
+            
             List<int> laserBlockIndexes = new List<int>();
 
             if (IsOnCooldown(p))
@@ -235,7 +245,6 @@ namespace lavalaser
             {
                 return;
             }
-            PlayerInfo.FindExact("Bruceja").Message("Block handlers updated!");
             MsgDebugger("Block handlers updated!");
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
         }

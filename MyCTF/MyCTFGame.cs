@@ -485,13 +485,26 @@ public class MyCTFGame : RoundsGame
             }
         }
     }
+
+    // BUG: When player joins map during countdown, they are randomly assigned to a team.
+    // if (TeamOf(p) == null && RoundInProgress) results in no players being assigned to a random team
+    // when the countdown hits 0.
+
+    // During the countdown:
+    // Players can join the map and select a team with /mc join red/blue
+    // After the countdown is over, players that are not in a team yet should be assigned a random team.
     private void HandleSentMap(Player p, Level prevLevel, Level level)
     {
+        Map.Message($"HandleSentMap called for player {p.name}");
         if (level == Map)
         {
             OutputMapSummary(p, Map.name, Map.Config);
-            if (TeamOf(p) == null)
+
+            // Randomly assigns team regardless if the countdown is still in progress
+            // but when countdown is in progress, no auto team should be assigned.
+            if (TeamOf(p) == null && RoundInProgress)
             {
+                Map.Message($"Assigning random team for player {p.name}");
                 AutoAssignTeam(p);
             }
         }
@@ -504,9 +517,21 @@ public class MyCTFGame : RoundsGame
 
     protected override void DoRound()
     {
+        Map.Message("&bDoRound called!");
         if (Running)
         {
             RoundInProgress = true;
+            Player[] items = PlayerInfo.Online.Items;
+            Player[] array = items;
+            foreach (Player player in array)
+            {
+                Map.Message($"&aNow looking at player {player.name}");
+                if (player.level == Map)
+                {
+                    Map.Message("&aSetting this player to a random team!");
+                    PlayerJoinedGame(player);
+                }
+            }
             while (Running && RoundInProgress && !HasSomeoneWon())
             {
                 Tick();
@@ -692,7 +717,7 @@ public class MyCTFGame : RoundsGame
     }
 
     // TODO: use built-in CpeMessage announce type
-    protected bool Countdown()
+    protected void Countdown()
     {
         DateTime startTime = DateTime.Now;
         DateTime now = DateTime.Now;
@@ -704,7 +729,7 @@ public class MyCTFGame : RoundsGame
         {
             if (!Running | RoundInProgress)
             {
-                return false;
+                return;
             }
             message = $"global &bMatch starts in &f{countdownTimer - elapsedTime.Seconds} &bseconds!";
 
@@ -737,7 +762,7 @@ public class MyCTFGame : RoundsGame
         if (playerCount >= 2)
         {
             Command.Find("Announce").Use(Player.Console, $"global &aGood luck!");
-            return true;
+            return;
         }
 
         else
@@ -748,8 +773,9 @@ public class MyCTFGame : RoundsGame
             {
                 Thread.Sleep(5000);
                 Countdown();
+                return;
             }
-            return false;
+            return;
         }
     }
 
@@ -758,6 +784,7 @@ public class MyCTFGame : RoundsGame
     // Spaghetti code but it works tho
     public override void Start(Player p, string map, int rounds)
     {
+        p.Message("&5Start called!");
         if (rounds == 0)
         {
             rounds = int.MaxValue;
@@ -784,15 +811,16 @@ public class MyCTFGame : RoundsGame
         IGame.RunningGames.Add(this);
         OnStateChangedEvent.Call(this);
         HookEventHandlers();
-        DoGrace();
        
+        Countdown();
+
         Server.StartThread(out var thread, "Game_ " + GameName, RunGame);
         Utils.SetBackgroundMode(thread);
-        RunGame();
     }
 
     private void RunGame()
     {
+        Map.Message("&6RunGame called!");
         try
         {
             while (Running && RoundsLeft > 0)
@@ -865,22 +893,18 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    private void DoGrace()
+    private void DoGrace(bool isVoting)
     {
         if (RoundInProgress)
         {
             return;
         }
-        Countdown();
 
-        Player[] items = PlayerInfo.Online.Items;
-        Player[] array = items;
-        foreach (Player player in array)
+        if (!isVoting)
         {
-            if (player.level == Map)
-            {
-                PlayerJoinedGame(player);
-            }
+            Countdown();
         }
+
+        
     }
 }
