@@ -25,7 +25,8 @@ namespace lavalaser
         public override string creator { get { return author; } }
 
         // The level we want to add a custom physics block to.
-        static string physicsLevelName = "bruceja8";
+        // static string physicsLevelName = "bruceja8";
+
         // Block that sets off the laser
         // For some unknown reason doesn't work with most blocks. 
         // Block placed but won't shoot the laser until block is broken.
@@ -42,20 +43,22 @@ namespace lavalaser
         public override void Load(bool startup)
         {
             OnBlockChangedEvent.Register(OnBlockPlaced, Priority.Low);
-            Level[] levels = LevelInfo.Loaded.Items;
-            foreach (Level lvl in levels)
-            {
-                if (lvl.name == physicsLevelName)
-                {
-                    lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
-                }
-            }
+            //Level[] levels = LevelInfo.Loaded.Items;
+            //foreach (Level lvl in levels)
+            //{
+            //    if (lvl.name == physicsLevelName)
+            //    {
+            //        lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
+            //    }
+            //}
             OnBlockHandlersUpdatedEvent.Register(OnBlockHandlersUpdated, Priority.Low);
+            OnLevelLoadedEvent.Register(HandleLevelLoaded, Priority.Low);
         }
         public override void Unload(bool shutdown)
         {
             OnBlockChangedEvent.Unregister(OnBlockPlaced);
             OnBlockHandlersUpdatedEvent.Unregister(OnBlockHandlersUpdated);
+            OnLevelLoadedEvent.Unregister(HandleLevelLoaded);
         }
              
         private static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
@@ -237,10 +240,10 @@ namespace lavalaser
 
         private static void OnBlockHandlersUpdated(Level lvl, BlockID block)
         {           
-            if (lvl.name != physicsLevelName)
-            {
-                return;
-            }
+            //if (lvl.name != physicsLevelName)
+            //{
+            //    return;
+            //}
             if (block != lavaLaserBlock)
             {
                 return;
@@ -260,6 +263,12 @@ namespace lavalaser
             Player debugger = PlayerInfo.FindExact(LavaLaser.author); if (debugger == null) { return; }
             debugger.Message(message, args);
         }
+
+        private static void HandleLevelLoaded(Level lvl)
+        {
+            lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
+        }
+
     }
 }
 
