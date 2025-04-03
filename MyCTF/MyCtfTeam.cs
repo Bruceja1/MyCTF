@@ -35,6 +35,7 @@ internal sealed class MyCtfTeam
     {
         Vec3U16 flagPos = FlagPos;
         lvl.Blockchange(flagPos.X, flagPos.Y, flagPos.Z, FlagBlock);
+        lvl.Message($"Resetting {Name} team's flag to {flagPos.X}, {flagPos.Y}, {flagPos.Z}");
     }
 }
 

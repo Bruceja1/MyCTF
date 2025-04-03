@@ -463,6 +463,7 @@ public class MyCTFGame : RoundsGame
 
             Vec3U16 spawnPos = ctfTeam.SpawnPos;
             pos = Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z);
+            yaw = 64;
         }
     }
 
@@ -531,8 +532,9 @@ public class MyCTFGame : RoundsGame
                     Map.Message("&aSetting this player to a random team!");
                     PlayerJoinedGame(player);
                 }
+                MoveToTeamSpawn(player);
             }
-            while (Running && RoundInProgress && !HasSomeoneWon())
+            while (Running && RoundInProgress && !HasSomeoneWon() && !EmptyTeam())
             {
                 Tick();
                 Thread.Sleep(Config.CollisionsCheckInterval);
@@ -643,8 +645,7 @@ public class MyCTFGame : RoundsGame
                 Map.Message("The round ended in a tie!");
             }
 
-            Blue.Captures = 0;
-            Red.Captures = 0;
+            ResetTeams();
             ResetFlagsState();
             Map.Message("Starting next round!");
         }
@@ -810,9 +811,7 @@ public class MyCTFGame : RoundsGame
         Running = true;
         IGame.RunningGames.Add(this);
         OnStateChangedEvent.Call(this);
-        HookEventHandlers();
-       
-        Countdown();
+        HookEventHandlers();       
 
         Server.StartThread(out var thread, "Game_ " + GameName, RunGame);
         Utils.SetBackgroundMode(thread);
@@ -825,6 +824,8 @@ public class MyCTFGame : RoundsGame
         {
             while (Running && RoundsLeft > 0)
             {
+                ResetFlagsState();
+                Countdown();
                 RoundInProgress = false;
                 if (RoundsLeft != int.MaxValue)
                 {
@@ -893,18 +894,19 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    private void DoGrace(bool isVoting)
+    private bool EmptyTeam()
     {
-        if (RoundInProgress)
+        if (Red.Members.Count == 0 | Blue.Members.Count == 0)
         {
-            return;
+            return true;
         }
+        return false;
+    }
 
-        if (!isVoting)
-        {
-            Countdown();
-        }
-
-        
+    private void MoveToTeamSpawn(Player p)
+    {
+        MyCtfTeam ctfTeam = TeamOf(p);
+        Position spawnPos = new Position(ctfTeam.SpawnPos.X, ctfTeam.SpawnPos.Y, ctfTeam.SpawnPos.Z);   
+        p.SendPosition(Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z), p.Rot);
     }
 }
