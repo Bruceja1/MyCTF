@@ -18,6 +18,8 @@ using MCGalaxy.SQL;
 using MCGalaxy.Commands.CPE;
 using System.Runtime.InteropServices;
 using MCGalaxy.Events.GameEvents;
+using MCGalaxy.DB;
+using System.Runtime.CompilerServices;
 
 namespace MCGalaxy.Modules.Games.MyCTF;
 
@@ -56,7 +58,8 @@ public class MyCTFGame : RoundsGame
     public override string GameName => "MyCTF";
 
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
-    private const int countdownTimer = 10;
+    private const int countdownTimer = 5;
+    private const string infoColor = "&6";
 
     public override RoundsGameConfig GetConfig()
     {
@@ -221,6 +224,7 @@ public class MyCTFGame : RoundsGame
         {
             ctfTeam.Members.Remove(p);
             DropFlag(p, ctfTeam);
+            ResetPlayerColor(p);
         }
         ClearData(p); // For debugging only
     }
@@ -252,10 +256,14 @@ public class MyCTFGame : RoundsGame
         }
         Get(p).HasFlag = false;
         team.Members.Add(p);
+        p.UpdateColor(team.Color);
         Map.Message(p.ColoredName + " &Sjoined the " + team.ColoredName + " &Steam");
         p.Message("You are now on the " + team.ColoredName + " team!");
         //TabList.Update(p, self: true);
         TabList.Add(p, p, byte.MaxValue);
+
+        Map.Message($"This player is on team {team.Name}");
+        Map.Message($"Setting {p.name}'s color to {team.Color}");       
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -463,7 +471,7 @@ public class MyCTFGame : RoundsGame
 
             Vec3U16 spawnPos = ctfTeam.SpawnPos;
             pos = Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z);
-            yaw = 64;
+            yaw = GetSpawnOrientation(p).RotY;
         }
     }
 
@@ -634,27 +642,35 @@ public class MyCTFGame : RoundsGame
             RoundInProgress = false;
             if (Blue.Captures > Red.Captures)
             {
-                Map.Message(Blue.ColoredName + " &Swon this round of CTF!");
+                Map.Message(Blue.ColoredName + infoColor + " won this round of CTF!");
             }
             else if (Red.Captures > Blue.Captures)
             {
-                Map.Message(Red.ColoredName + " &Swon this round of CTF!");
+                Map.Message(Red.ColoredName + infoColor + " won this round of CTF!");
             }
             else
             {
-                Map.Message("The round ended in a tie!");
+                Map.Message(infoColor + "The round ended in a tie!");
             }
 
             ResetTeams();
             ResetFlagsState();
+            foreach (Player player in PlayerInfo.Online.Items)
+            {
+                ResetPlayerColor(player);
+            }
             Map.Message("Starting next round!");
         }
     }
 
     private void TakeFlag(Player p, MyCtfTeam team)
-    {
+    {     
         MyCtfTeam ctfTeam = Opposing(team);
-        Map.Message(team.Color + p.DisplayName + " took the " + ctfTeam.ColoredName + " &Steam's FLAG");
+
+        string message = team.Color + p.DisplayName + infoColor + " has taken the " + ctfTeam.ColoredName + infoColor + " team's flag!";
+        Map.Message(message);
+        Command.Find("Announce").Use(Player.Console, "global " + message);
+
         MyCtfData ctfData = Get(p);
         ctfData.HasFlag = true;
         DrawPlayerFlag(p, ctfData);
@@ -667,7 +683,12 @@ public class MyCTFGame : RoundsGame
         MyCtfData ctfData = Get(p);
         if (ctfData.HasFlag)
         {
-            Map.Message(team.Color + p.DisplayName + " RETURNED THE FLAG!");
+            MyCtfTeam opposing = Opposing(team);
+            string message = team.Color + p.DisplayName + infoColor + " has captured the " + opposing.Color + opposing.Name + infoColor + " team's flag!";
+
+            Map.Message(message);
+            Command.Find("Announce").Use(Player.Console, "global " + message);
+
             ctfData.HasFlag = false;
             ResetPlayerFlag(p, ctfData);
             ctfData.Points += cfg.Capture_PointsGained;
@@ -678,7 +699,7 @@ public class MyCTFGame : RoundsGame
         }
         else
         {
-            p.Message("You cannot take your own flag!");
+            p.Message(infoColor + "You cannot take your own flag!");
         }
     }
 
@@ -687,9 +708,12 @@ public class MyCTFGame : RoundsGame
         MyCtfData ctfData = Get(p);
         if (ctfData.HasFlag)
         {
+            MyCtfTeam opposing = Opposing(team);
+            string message = team.Color + p.DisplayName + infoColor + " has dropped the " + opposing.Color + opposing.Name + infoColor + " team's flag!";          
             ctfData.HasFlag = false;
             ResetPlayerFlag(p, ctfData);
-            Map.Message(team.Color + p.DisplayName + " DROPPED THE FLAG!");
+            Map.Message(message);
+            Command.Find("Announce").Use(Player.Console, "global " + message);
             ctfData.Points -= cfg.Capture_PointsLost;
             MyCtfTeam ctfTeam = Opposing(team);
             ctfTeam.RespawnFlag(Map);
@@ -712,7 +736,7 @@ public class MyCTFGame : RoundsGame
 
         if (playerTeam != opponentTeam)
         {
-            string deathMessage = $"{opponent.ColoredName} &3was killed by {p.ColoredName}!";
+            string deathMessage = opponent.ColoredName + infoColor + " was killed by " + p.ColoredName!;
             opponent.HandleDeath(4, deathMessage);
         }
     }
@@ -754,6 +778,7 @@ public class MyCTFGame : RoundsGame
         int playerCount = 0;
         foreach (Player pl in Map.players)
         {
+            Map.Message($"Player {pl.name} is AFK? {pl.IsAfk}. is Ref? {pl.Game.Referee}");
             if (!pl.IsAfk && !pl.Game.Referee)
             {
                 playerCount++;
@@ -874,10 +899,9 @@ public class MyCTFGame : RoundsGame
         p.Message("p.Extras data cleared");
     }
 
+    // TODO: move message validation to CmdMyCTF
     public void HandleJoinCmd(Player p, string[] message)
     {
-
-
         if (message[1].CaselessEq("Blue"))
         {
             JoinTeam(p, Blue);
@@ -906,7 +930,77 @@ public class MyCTFGame : RoundsGame
     private void MoveToTeamSpawn(Player p)
     {
         MyCtfTeam ctfTeam = TeamOf(p);
-        Position spawnPos = new Position(ctfTeam.SpawnPos.X, ctfTeam.SpawnPos.Y, ctfTeam.SpawnPos.Z);   
-        p.SendPosition(Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z), p.Rot);
+        Map.Message("This player's team is " + ctfTeam.Name);
+        Position spawnPos = new Position(ctfTeam.SpawnPos.X, ctfTeam.SpawnPos.Y, ctfTeam.SpawnPos.Z);
+        Map.Message($"This player will be sent to {ctfTeam.SpawnPos.X}, {ctfTeam.SpawnPos.Y}, {ctfTeam.SpawnPos.Z}");
+        Orientation spawnOrientation = GetSpawnOrientation(p);
+        p.SendPosition(Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z), spawnOrientation);
+    }
+
+    private void ResetPlayerColor(Player p)
+    {
+        Map.Message($"Resetting {p.name}'s color");
+        p.UpdateColor(PlayerInfo.DefaultColor(p));
+               
+    }
+
+    private Orientation GetSpawnOrientation(Player p)
+    {
+        //Position middlePos = new((int)Math.Floor(Map.Length / 2.0), 0, (int)Math.Floor(Map.Width / 2.0));
+        //Map.Message("The middlePos is " + middlePos.X + " " + middlePos.Y + " " + middlePos.Z);
+
+        Orientation orientation = new Orientation(0, 0);
+        Vec3U16 flagPos = TeamOf(p).FlagPos;
+        Vec3U16 enemyFlagPos = Opposing(TeamOf(p)).FlagPos;
+        
+        int dx = flagPos.X - enemyFlagPos.X;
+        int dz = flagPos.Z - enemyFlagPos.Z;
+
+        if (Math.Abs(dx) >= Math.Abs(dz))
+        {
+            Map.Message("&eLooking alongside x-axis");
+            // Look alongside the x-axis
+            // yaw is 90 or 270
+
+            // if it's negative, yaw is 90
+            if (dx <= 0)
+            {
+                Map.Message("&eYaw is 90");
+                orientation.RotY = Orientation.DegreesToPacked(90);
+            }
+            // if it's positive, yaw is 270
+            else if (dx > 0)
+            {
+                Map.Message("&eYaw is 270");
+                orientation.RotY = Orientation.DegreesToPacked(270);              
+            }
+
+        }
+        else if (Math.Abs(dx)  < Math.Abs(dz))  
+        {
+            Map.Message("&eLooking alongside z-axis");
+            // Look alongside the z-axis
+            // yaw is 0 or 180
+
+            // if it's negative, yaw is 180
+            if (dz <= 0)
+            {
+                Map.Message("&eYaw is 180");
+                orientation.RotY = Orientation.DegreesToPacked(180);               
+            }
+
+            // if it's positive, yaw is 0
+            else if (dz > 0)
+            {
+                Map.Message("&eYaw is 0");
+                orientation.RotY = Orientation.DegreesToPacked(0);
+            }
+        }
+        else
+        {
+            Map.Message("&eReturning player rotation");
+            orientation.RotY = p.Rot.RotY;
+        }
+        return orientation;
     }
 }

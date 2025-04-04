@@ -65,6 +65,14 @@ namespace lavalaser
         {
             int blockIndex = p.level.PosToInt(x, y, z);
 
+            // if (result != ChangeResult.Modified)
+          
+            BlockID newBlock = p.level.GetBlock(x, y, z);
+            if (newBlock != igniteBlock)
+            {
+                return;
+            }
+
             // Other players can't see the ignite block
             foreach (Player player in PlayerInfo.Online.Items)
             {
@@ -73,20 +81,12 @@ namespace lavalaser
                     player.SendBlockchange(x, y, z, Block.Air);
                 }
             }
-            
+
             List<int> laserBlockIndexes = new List<int>();
 
             if (IsOnCooldown(p))
             {
                 p.level.AddUpdate(blockIndex, Block.Air);
-                return;
-            }
-
-            // if (result != ChangeResult.Modified)
-          
-            BlockID newBlock = p.level.GetBlock(x, y, z);
-            if (newBlock != igniteBlock)
-            {
                 return;
             }
 
@@ -219,7 +219,8 @@ namespace lavalaser
                 // Laser will be interrupted if there is a block in front of it
                 BlockID nextBlock = p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ));
 
-                if (nextBlock == Block.Air || nextBlock == lavaLaserBlock || nextBlock == igniteBlock)
+                //if (nextBlock == Block.Air || nextBlock == lavaLaserBlock || nextBlock == igniteBlock)
+                if (nextBlock == Block.Air || nextBlock == igniteBlock)
                 {
                     p.level.AddUpdate(index, lavaLaserBlock);
                     laserBlockIndexes.Add(index);
