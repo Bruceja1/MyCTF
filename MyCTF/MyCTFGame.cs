@@ -1,9 +1,4 @@
-﻿
-
-
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using MCGalaxy.Blocks.Physics;
@@ -32,8 +27,9 @@ public class MyCTFGame : RoundsGame
         public int Captures;
 
         public int Tags;
+        public int Kills;
     }
-
+    
     private MyCTFMapConfig cfg = new MyCTFMapConfig();
 
     public MyCTFConfig Config = new MyCTFConfig();
@@ -46,13 +42,14 @@ public class MyCTFGame : RoundsGame
 
     private const string myctfExtrasKey = "MCG_MYCTF_DATA";
 
-    private static ColumnDesc[] myctfTable = new ColumnDesc[5]
+    private static ColumnDesc[] myctfTable = new ColumnDesc[6]
     {
         new ColumnDesc("ID", ColumnType.Integer, 0, autoInc: true, priKey: true, notNull: true),
         new ColumnDesc("Name", ColumnType.VarChar, 20),
         new ColumnDesc("Points", ColumnType.UInt24),
         new ColumnDesc("Captures", ColumnType.UInt24),
-        new ColumnDesc("tags", ColumnType.UInt24)
+        new ColumnDesc("tags", ColumnType.UInt24),
+        new ColumnDesc("Kills", ColumnType.UInt24)
     };
 
     public override string GameName => "MyCTF";
@@ -84,6 +81,7 @@ public class MyCTFGame : RoundsGame
         ctfData.Captures = ctfStats.Captures;
         ctfData.Points = ctfStats.Points;
         ctfData.Tags = ctfStats.Tags;
+        ctfData.Kills = ctfStats.Kills;
         p.Extras["MCG_MYCTF_DATA"] = ctfData; // TODO: Why not p.Extras[myctfExtrasKey] = ctfData; ?
         return ctfData;
     }
@@ -99,13 +97,6 @@ public class MyCTFGame : RoundsGame
         // I believe it has to do with leftover data in p.Extras["MCG_MYCTF_DATA"]
         // The error only occurs after unloading and reloading the plugin
 
-
-        // TODO:
-        // Save player in some dictionary. When the plugin unloads, the players in the dictionary
-        // will have their MyCtf key in p.Extras set to null.
-        // or: on plugin unload, cast value back to object?
-        // or... ?
-
         // This line fixes the error but:
         // Works when just loading the plugin for the first time
         // When reloading the plugin the following happens:
@@ -113,9 +104,6 @@ public class MyCTFGame : RoundsGame
         // After the teams have been assigned using /mc status works fine
         // Update: noticed there's a small window between teams being assigned and /mc status not returning
         // an ObjectNullReference anymore when trying to show CtfData
-        // Cannot kill players with the lasergun anymore; lasergun seems to not be able to find the instance
-        // of MyCTFGame anymore. Maybe setup an event that listens to when lasergun is used?
-        // 
         return value as MyCtfData;
     }
 
@@ -148,6 +136,7 @@ public class MyCTFGame : RoundsGame
         MyCtfData playerData = TryGet(p);
         p.Message($"Captures: {playerData.Captures.ToString()}");
         p.Message($"Tags: {playerData.Tags.ToString()}");
+        p.Message($"Kills: {playerData.Kills.ToString()}");
         p.Message($"Points: {playerData.Points.ToString()}");
         p.Message($"HasFlag: {playerData.HasFlag.ToString()}");
         p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
@@ -158,18 +147,6 @@ public class MyCTFGame : RoundsGame
 
     protected override void StartGame()
     {
-        //Player me = PlayerInfo.FindExact("Bruceja");
-
-        //if (!me.Extras.Contains("MCG_MYCTF_DATA"))
-        //{
-        //    me.Message("Your extras dictionary is empty!");
-        //}
-        //else
-        //{
-        //    me.Message("You still have leftover data!");
-        //}
-
-
         Blue.RespawnFlag(Map);
         Red.RespawnFlag(Map);
         ResetTeams();
@@ -258,12 +235,9 @@ public class MyCTFGame : RoundsGame
         team.Members.Add(p);
         p.UpdateColor(team.Color);
         Map.Message(p.ColoredName + " &Sjoined the " + team.ColoredName + " &Steam");
-        p.Message("You are now on the " + team.ColoredName + " team!");
+        p.Message("You are now on the " + team.ColoredName + infoColor + " team!");
         //TabList.Update(p, self: true);
-        TabList.Add(p, p, byte.MaxValue);
-
-        Map.Message($"This player is on team {team.Name}");
-        Map.Message($"Setting {p.name}'s color to {team.Color}");       
+        TabList.Add(p, p, byte.MaxValue);     
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -314,6 +288,7 @@ public class MyCTFGame : RoundsGame
         result.Points = record.GetInt("Points");
         result.Captures = record.GetInt("Captures");
         result.Tags = record.GetInt("Tags");
+        result.Kills = record.GetInt("Kills");
         return result;
     }
 
@@ -330,12 +305,12 @@ public class MyCTFGame : RoundsGame
     protected override void SaveStats(Player p)
     {
         MyCtfData ctfData = TryGet(p);
-        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0))
+        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0)
         {
-            object[] args = new object[4] { ctfData.Points, ctfData.Captures, ctfData.Tags, p.name };
-            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2", "WHERE Name=@3", args) == 0)
+            object[] args = new object[5] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, p.name };
+            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3", "WHERE Name=@4", args) == 0)
             {
-                Database.AddRow("MyCTF", "Points, Captures, tags, Name", args);
+                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, Name", args);
             }
         }
     }
@@ -352,7 +327,6 @@ public class MyCTFGame : RoundsGame
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
         IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
         base.HookEventHandlers();
-        Map.Message("Event handlers hooked");
     }
 
     protected override void UnhookEventHandlers()
@@ -367,7 +341,6 @@ public class MyCTFGame : RoundsGame
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
         IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
         base.UnhookEventHandlers();
-        Map.Message("Event handlers unhooked");
     }
 
     private void HandlePlayerDied(Player p, ushort deathblock, ref TimeSpan cooldown)
@@ -504,7 +477,6 @@ public class MyCTFGame : RoundsGame
     // After the countdown is over, players that are not in a team yet should be assigned a random team.
     private void HandleSentMap(Player p, Level prevLevel, Level level)
     {
-        Map.Message($"HandleSentMap called for player {p.name}");
         if (level == Map)
         {
             OutputMapSummary(p, Map.name, Map.Config);
@@ -513,7 +485,6 @@ public class MyCTFGame : RoundsGame
             // but when countdown is in progress, no auto team should be assigned.
             if (TeamOf(p) == null && RoundInProgress)
             {
-                Map.Message($"Assigning random team for player {p.name}");
                 AutoAssignTeam(p);
             }
         }
@@ -526,7 +497,6 @@ public class MyCTFGame : RoundsGame
 
     protected override void DoRound()
     {
-        Map.Message("&bDoRound called!");
         if (Running)
         {
             RoundInProgress = true;
@@ -534,10 +504,8 @@ public class MyCTFGame : RoundsGame
             Player[] array = items;
             foreach (Player player in array)
             {
-                Map.Message($"&aNow looking at player {player.name}");
                 if (player.level == Map)
                 {
-                    Map.Message("&aSetting this player to a random team!");
                     PlayerJoinedGame(player);
                 }
                 MoveToTeamSpawn(player);
@@ -722,22 +690,16 @@ public class MyCTFGame : RoundsGame
 
     private void HandleWeaponContact(Player p, Player opponent)
     {
-        // On plugin reload this method is not being called anymore
-        // Reloading lavalaser plugin does not fix it
-        // Loading the lavalaser plugin after starting MyCTF does not fix it
-
-        Map.Message("HandleWeaponContact called"); // Debugging
-        p.Message("HandleWeaponContact called");
-
         MyCtfTeam playerTeam = TeamOf(p);
         MyCtfTeam opponentTeam = TeamOf(opponent);
-        p.Message("Your team is {0}", playerTeam.Name); // Debugging
-        p.Message("Opponent's team is {0}", opponentTeam.Name);
 
         if (playerTeam != opponentTeam)
         {
             string deathMessage = opponent.ColoredName + infoColor + " was killed by " + p.ColoredName!;
             opponent.HandleDeath(4, deathMessage);
+
+            MyCtfData ctfData = Get(p);
+            ctfData.Kills += 1;
         }
     }
 
@@ -778,7 +740,6 @@ public class MyCTFGame : RoundsGame
         int playerCount = 0;
         foreach (Player pl in Map.players)
         {
-            Map.Message($"Player {pl.name} is AFK? {pl.IsAfk}. is Ref? {pl.Game.Referee}");
             if (!pl.IsAfk && !pl.Game.Referee)
             {
                 playerCount++;
@@ -844,7 +805,6 @@ public class MyCTFGame : RoundsGame
 
     private void RunGame()
     {
-        Map.Message("&6RunGame called!");
         try
         {
             while (Running && RoundsLeft > 0)
@@ -873,7 +833,6 @@ public class MyCTFGame : RoundsGame
                     VoteAndMoveToNextMap();
                 }
             }
-
             End();
         }
         catch (Exception ex)
@@ -930,9 +889,7 @@ public class MyCTFGame : RoundsGame
     private void MoveToTeamSpawn(Player p)
     {
         MyCtfTeam ctfTeam = TeamOf(p);
-        Map.Message("This player's team is " + ctfTeam.Name);
         Position spawnPos = new Position(ctfTeam.SpawnPos.X, ctfTeam.SpawnPos.Y, ctfTeam.SpawnPos.Z);
-        Map.Message($"This player will be sent to {ctfTeam.SpawnPos.X}, {ctfTeam.SpawnPos.Y}, {ctfTeam.SpawnPos.Z}");
         Orientation spawnOrientation = GetSpawnOrientation(p);
         p.SendPosition(Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z), spawnOrientation);
     }
@@ -940,15 +897,11 @@ public class MyCTFGame : RoundsGame
     private void ResetPlayerColor(Player p)
     {
         Map.Message($"Resetting {p.name}'s color");
-        p.UpdateColor(PlayerInfo.DefaultColor(p));
-               
+        p.UpdateColor(PlayerInfo.DefaultColor(p));             
     }
 
     private Orientation GetSpawnOrientation(Player p)
     {
-        //Position middlePos = new((int)Math.Floor(Map.Length / 2.0), 0, (int)Math.Floor(Map.Width / 2.0));
-        //Map.Message("The middlePos is " + middlePos.X + " " + middlePos.Y + " " + middlePos.Z);
-
         Orientation orientation = new Orientation(0, 0);
         Vec3U16 flagPos = TeamOf(p).FlagPos;
         Vec3U16 enemyFlagPos = Opposing(TeamOf(p)).FlagPos;
@@ -958,47 +911,39 @@ public class MyCTFGame : RoundsGame
 
         if (Math.Abs(dx) >= Math.Abs(dz))
         {
-            Map.Message("&eLooking alongside x-axis");
             // Look alongside the x-axis
             // yaw is 90 or 270
 
             // if it's negative, yaw is 90
             if (dx <= 0)
             {
-                Map.Message("&eYaw is 90");
                 orientation.RotY = Orientation.DegreesToPacked(90);
             }
             // if it's positive, yaw is 270
             else if (dx > 0)
             {
-                Map.Message("&eYaw is 270");
                 orientation.RotY = Orientation.DegreesToPacked(270);              
             }
-
         }
         else if (Math.Abs(dx)  < Math.Abs(dz))  
         {
-            Map.Message("&eLooking alongside z-axis");
             // Look alongside the z-axis
             // yaw is 0 or 180
 
             // if it's negative, yaw is 180
             if (dz <= 0)
             {
-                Map.Message("&eYaw is 180");
                 orientation.RotY = Orientation.DegreesToPacked(180);               
             }
 
             // if it's positive, yaw is 0
             else if (dz > 0)
             {
-                Map.Message("&eYaw is 0");
                 orientation.RotY = Orientation.DegreesToPacked(0);
             }
         }
         else
         {
-            Map.Message("&eReturning player rotation");
             orientation.RotY = p.Rot.RotY;
         }
         return orientation;

@@ -143,16 +143,12 @@ namespace lavalaser
                     
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
                     {                     
-                        // Throws error when no MyCTF game in progress
-                        // MyCTFGame.Instance.HandleWeaponCollision(p, opponent);
                         try
                         {
                             OnWeaponContactEvent.Call(p, opponent);
-                            p.Message("OnWeaponContactEvent called successfully"); // Debugging
                         }
                         catch (Exception e) 
                         {
-                            p.Message("Failed to call OnWeaponContactEvent");
                             p.Message(e.ToString());
                         }                                             
                     }
@@ -174,7 +170,6 @@ namespace lavalaser
             TimeSpan elapsedTime = endTime - startTime;
 
             //p.Message(elapsedTime.TotalSeconds.ToString());
-
             if (elapsedTime < TimeSpan.FromSeconds(cooldown))
             {               
                 return true;
@@ -249,7 +244,6 @@ namespace lavalaser
             {
                 return;
             }
-            MsgDebugger("Block handlers updated!");
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
         }
 

@@ -5,6 +5,7 @@ namespace MCGalaxy.Modules.Games.MyCTF;
 internal sealed class MyCtfData
 {
     public int Captures;
+    public int Kills;
 
     public int Tags;
 
