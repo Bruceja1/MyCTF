@@ -240,17 +240,13 @@ public class MyCTFGame : RoundsGame
         p.UpdateColor(team.Color);
         Map.Message(p.ColoredName + infoColor + " joined the " + team.ColoredName + infoColor + " team");
         p.Message(infoColor + "You are now on the " + team.ColoredName + infoColor + " team!");
-        //TabList.Update(p, self: true);
-        //TabList.Add(p, p, byte.MaxValue);
-        //UpdateTabList(p);
-        
+
         // Trying to find out how to update the name above a player's head only.
         //p.DisplayName = "hi";
         //p.BrushName = "test";       
         //p.name = "test";
         //p.SkinName = "test";
         //p.SuperName = "test";
-
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -411,6 +407,7 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map)
         {
+            p.Message("You are not on the map!");
             return;
         }
 
@@ -440,6 +437,12 @@ public class MyCTFGame : RoundsGame
         if (vec3U == ctfTeam.FlagPos && !Map.IsAirAt(x, y, z))
         {
             ReturnFlag(p, ctfTeam);
+            cancel = true;
+        }
+
+        if (Map.IsAirAt(x, y ,z) && (vec3U == Opposing(ctfTeam).FlagPos || vec3U == ctfTeam.FlagPos))
+        {
+            p.RevertBlock(x, y, z);
             cancel = true;
         }
     }
