@@ -650,8 +650,8 @@ public class MyCTFGame : RoundsGame
             {
                 Map.Message(infoColor + "The round ended in a tie!");
             }
-            ResetTeams();
             ResetFlagsState();
+            ResetTeams();           
             foreach (Player player in PlayerInfo.Online.Items)
             {
                 ResetPlayerColor(player);
@@ -934,7 +934,6 @@ public class MyCTFGame : RoundsGame
 
     private static void ResetPlayerColor(Player p)
     {
-        p.Message($"Resetting {p.name}'s color");
         p.SetColor(PlayerInfo.DefaultColor(p));             
     }
 
@@ -1069,7 +1068,7 @@ public class MyCTFGame : RoundsGame
         {
             return;
         }
-        string botName = team.Name == "Blue" ? "Red" : "Blue";
+        string botName = team == Blue ? "Red" : "Blue";
         botName = botName.Replace(' ', '_');
         
         PlayerBot flagBot = new PlayerBot(botName, Map);
@@ -1089,12 +1088,11 @@ public class MyCTFGame : RoundsGame
 
     private void RemoveFlagBot(Player p)
     {
-        Map.Message("Removing flag bot...");
         if (p.Level != Map)
-        { 
+        {
             return;
         }
-        PlayerBot flagBot = FindFlagBot(p);   
+        PlayerBot flagBot = FindFlagBot(p);
         if (flagBot != null)
         {
             PlayerBot.Remove(flagBot);
