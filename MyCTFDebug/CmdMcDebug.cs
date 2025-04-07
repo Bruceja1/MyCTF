@@ -16,12 +16,17 @@ public sealed class CmdMcDebug : Command2
     };
 
     public override void Use(Player p, string message, CommandData data)
-    {
-        p.Message($"The key {(p.Extras.Contains("MCG_MYCTF_DATA") ? "exists" : "does not exist")}");
+    {   
+        if (message.CaselessEq("key"))
+        {
+            p.Message($"The key {(p.Extras.Contains("MCG_MYCTF_DATA") ? "exists" : "does not exist")}");
+        }
     }
 
     public override void Help(Player p)
     {
         p.Message("&T/mcdebug&H- Displays whether or not the key MCG_MYCTF_DATA exists in your p.Extras.");
     }
+
+
 }

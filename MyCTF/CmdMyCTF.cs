@@ -29,13 +29,11 @@ internal sealed class CmdMyCTF : RoundsGameCmd
         {
             HandleStatus(p, game);
         }
-
         else if (message.CaselessStarts("join"))
         {
             p.Message("Join command used");
             HandleJoin(p, message);
         }
-
         else if (CheckExtraPerm(p, data, 1))
         {
             if (message.CaselessEq("start") || message.CaselessStarts("start "))

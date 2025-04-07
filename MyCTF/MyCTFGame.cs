@@ -15,6 +15,11 @@ using System.Runtime.InteropServices;
 using MCGalaxy.Events.GameEvents;
 using MCGalaxy.DB;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using MCGalaxy.Network;
+using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
+using MCGalaxy.Commands;
 
 namespace MCGalaxy.Modules.Games.MyCTF;
 
@@ -203,7 +208,6 @@ public class MyCTFGame : RoundsGame
             DropFlag(p, ctfTeam);
             ResetPlayerColor(p);
         }
-        ClearData(p); // For debugging only
     }
 
     private void AutoAssignTeam(Player p)
@@ -234,10 +238,19 @@ public class MyCTFGame : RoundsGame
         Get(p).HasFlag = false;
         team.Members.Add(p);
         p.UpdateColor(team.Color);
-        Map.Message(p.ColoredName + " &Sjoined the " + team.ColoredName + " &Steam");
-        p.Message("You are now on the " + team.ColoredName + infoColor + " team!");
+        Map.Message(p.ColoredName + infoColor + " joined the " + team.ColoredName + infoColor + " team");
+        p.Message(infoColor + "You are now on the " + team.ColoredName + infoColor + " team!");
         //TabList.Update(p, self: true);
-        TabList.Add(p, p, byte.MaxValue);     
+        //TabList.Add(p, p, byte.MaxValue);
+        //UpdateTabList(p);
+        
+        // Trying to find out how to update the name above a player's head only.
+        //p.DisplayName = "hi";
+        //p.BrushName = "test";       
+        //p.name = "test";
+        //p.SkinName = "test";
+        //p.SuperName = "test";
+
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -305,6 +318,10 @@ public class MyCTFGame : RoundsGame
     protected override void SaveStats(Player p)
     {
         MyCtfData ctfData = TryGet(p);
+        if (ctfData == null)
+        {
+            return;
+        }
         if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0)
         {
             object[] args = new object[5] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, p.name };
@@ -322,7 +339,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Register(HandlePlayerCommand, Priority.High);
         IEvent<OnBlockChanging>.Register(HandleBlockChanging, Priority.High);
         IEvent<OnPlayerSpawning>.Register(HandlePlayerSpawning, Priority.High);
-        IEvent<OnTabListEntryAdded>.Register(HandleTabListEntryAdded, Priority.High);
+        //IEvent<OnTabListEntryAdded>.Register(HandleTabListEntryAdded, Priority.High);
         IEvent<OnSentMap>.Register(HandleSentMap, Priority.High);
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
         IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
@@ -336,7 +353,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Unregister(HandlePlayerCommand);
         IEvent<OnBlockChanging>.Unregister(HandleBlockChanging);
         IEvent<OnPlayerSpawning>.Unregister(HandlePlayerSpawning);
-        IEvent<OnTabListEntryAdded>.Unregister(HandleTabListEntryAdded);
+        //IEvent<OnTabListEntryAdded>.Unregister(HandleTabListEntryAdded);
         IEvent<OnSentMap>.Unregister(HandleSentMap);
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
         IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
@@ -448,25 +465,26 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    private void HandleTabListEntryAdded(Entity entity, ref string tabName, ref string tabGroup, Player dst)
-    {
-        if (entity is Player player && player.level == Map)
-        {
-            MyCtfTeam ctfTeam = TeamOf(player);
-            if (player.Game.Referee)
-            {
-                tabGroup = "&2Referees";
-            }
-            else if (ctfTeam != null)
-            {
-                tabGroup = ctfTeam.ColoredName + " team";
-            }
-            else
-            {
-                tabGroup = "&7Spectators";
-            }
-        }
-    }
+    //private void HandleTabListEntryAdded(Entity entity, ref string tabName, ref string tabGroup, Player dst)
+    //{
+    //    if (entity is Player player && player.level == Map)
+    //    {
+    //        MyCtfTeam ctfTeam = TeamOf(player);
+    //        MyCtfData ctfData = TryGet(player);
+    //        if (player.Game.Referee)
+    //        {
+    //            tabGroup = "&2Referees";
+    //        }
+    //        else if (ctfTeam != null)
+    //        {
+    //            tabGroup = ctfTeam.ColoredName + " team";
+    //        }
+    //        else
+    //        {
+    //            tabGroup = "&7Spectators";
+    //        }
+    //    }
+    //}
 
     // BUG: When player joins map during countdown, they are randomly assigned to a team.
     // if (TeamOf(p) == null && RoundInProgress) results in no players being assigned to a random team
@@ -507,8 +525,8 @@ public class MyCTFGame : RoundsGame
                 if (player.level == Map)
                 {
                     PlayerJoinedGame(player);
-                }
-                MoveToTeamSpawn(player);
+                    MoveToTeamSpawn(player);
+                }              
             }
             while (Running && RoundInProgress && !HasSomeoneWon() && !EmptyTeam())
             {
@@ -565,7 +583,7 @@ public class MyCTFGame : RoundsGame
                     PlayerActions.Respawn(player2);
                     if (ctfData2.HasFlag)
                     {
-                        DropFlag(player, ctfTeam2);
+                        DropFlag(player, ctfTeam2);                       
                     }
 
                     ctfData.Points += cfg.Tag_PointsGained;
@@ -574,6 +592,7 @@ public class MyCTFGame : RoundsGame
                     ctfData2.TagCooldown = false;
                 }
             }
+            UpdateTabList(player);
         }
     }
 
@@ -642,6 +661,14 @@ public class MyCTFGame : RoundsGame
         MyCtfData ctfData = Get(p);
         ctfData.HasFlag = true;
         DrawPlayerFlag(p, ctfData);
+
+        // TODO: Clean up
+        //string tabName = p.ColoredName;
+        //string tabNick = tabName + " " + Opposing(team).Color + "▒";
+        //string text = p.level.name;
+        //string group = (Server.Config.TablistGlobal ? ("On " + text) : "&fPlayers");
+        //TabList.Remove(p, p);        
+        //p.Session.SendAddTabEntry(byte.MaxValue, p.truename, tabNick, group, groupRank);                        
     }
 
     private void ReturnFlag(Player p, MyCtfTeam team)
@@ -693,7 +720,7 @@ public class MyCTFGame : RoundsGame
         MyCtfTeam playerTeam = TeamOf(p);
         MyCtfTeam opponentTeam = TeamOf(opponent);
 
-        if (playerTeam != opponentTeam)
+        if (playerTeam != null && opponentTeam != null && playerTeam != opponentTeam)
         {
             string deathMessage = opponent.ColoredName + infoColor + " was killed by " + p.ColoredName!;
             opponent.HandleDeath(4, deathMessage);
@@ -894,10 +921,10 @@ public class MyCTFGame : RoundsGame
         p.SendPosition(Position.FromFeetBlockCoords(spawnPos.X, spawnPos.Y, spawnPos.Z), spawnOrientation);
     }
 
-    private void ResetPlayerColor(Player p)
+    private static void ResetPlayerColor(Player p)
     {
-        Map.Message($"Resetting {p.name}'s color");
-        p.UpdateColor(PlayerInfo.DefaultColor(p));             
+        p.Message($"Resetting {p.name}'s color");
+        p.SetColor(PlayerInfo.DefaultColor(p));             
     }
 
     private Orientation GetSpawnOrientation(Player p)
@@ -947,5 +974,77 @@ public class MyCTFGame : RoundsGame
             orientation.RotY = p.Rot.RotY;
         }
         return orientation;
+    }
+    public string GetFlagOf(Player p)
+    {
+        MyCtfData ctfData = TryGet(p);
+        if (ctfData == null || TeamOf(p) == null || !ctfData.HasFlag)
+        {
+            return "";
+        }
+        MyCtfTeam team = TeamOf(p);
+        MyCtfTeam opposing = Opposing(team);
+        return opposing.Color + "▒";
+    }
+
+    public string GetGroupOf(Player p)
+    {     
+        MyCtfTeam ctfTeam = TeamOf(p);
+        MyCtfData ctfData = TryGet(p);
+        if (p.Level != Map)
+        {
+            return "&fOn " + p.Level.MapName;
+        }
+        if (p.Game.Referee)
+        {
+            return "&2Referees";
+        }
+        else if (ctfTeam != null)
+        {
+            return ctfTeam.ColoredName + " team";
+        }
+        else
+        {
+            return "&7Teamless cunts";
+        }        
+    }
+
+    public void UpdateTabList(Player p, bool self = true)
+    {
+        //string col = p.color;
+        //OnSettingColorEvent.Call(p, ref col);
+        //string tabName = "";
+        //string tabGroup = "";
+        //foreach (Player player in PlayerInfo.Online.Items)
+        //{
+        //    if (player.Level == Map)
+        //    {
+        //        OnTabListEntryAddedEvent.Call(p, ref tabName, ref tabGroup, player);
+        //    }
+        //}
+        Player[] items = PlayerInfo.Online.Items;
+        Player[] array = items;
+        foreach (Player player in array)
+        {
+            if (p == player)
+            {
+                if (self)
+                {
+                    TabList.Add(player, p, byte.MaxValue);
+                }
+            }
+            else if (Server.Config.TablistGlobal || p.level == player.level)
+            {
+                if (player.CanSee(p))
+                {
+                    TabList.Add(player, p, p.id);
+                }
+
+                if (p.CanSee(player))
+                {
+                    TabList.Add(p, player, player.id);
+                }
+            }
+        }
     }
 }
