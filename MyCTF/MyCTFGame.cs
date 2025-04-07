@@ -62,6 +62,8 @@ public class MyCTFGame : RoundsGame
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
     private const int countdownTimer = 5;
     private const string infoColor = "&6";
+    private const string flagBotScale = "0.8";
+    private const int flagBotYOffset = 85; 
 
     public override RoundsGameConfig GetConfig()
     {
@@ -489,13 +491,9 @@ public class MyCTFGame : RoundsGame
     //    }
     //}
 
-    // BUG: When player joins map during countdown, they are randomly assigned to a team.
-    // if (TeamOf(p) == null && RoundInProgress) results in no players being assigned to a random team
-    // when the countdown hits 0.
-
     // During the countdown:
     // Players can join the map and select a team with /mc join red/blue
-    // After the countdown is over, players that are not in a team yet should be assigned a random team.
+    // After the countdown is over, players that are not in a team yet are assigned a random team.
     private void HandleSentMap(Player p, Level prevLevel, Level level)
     {
         if (level == Map)
@@ -601,28 +599,38 @@ public class MyCTFGame : RoundsGame
 
     private void ResetPlayerFlag(Player p, MyCtfData data)
     {
-        Vec3S32 lastHeadPos = data.LastHeadPos;
-        ushort x = (ushort)lastHeadPos.X;
-        ushort y = (ushort)lastHeadPos.Y;
-        ushort z = (ushort)lastHeadPos.Z;
-        data.LastHeadPos = default(Vec3S32);
-        Map.BroadcastRevert(x, y, z);
+        //Vec3S32 lastHeadPos = data.LastHeadPos;
+        //ushort x = (ushort)lastHeadPos.X;
+        //ushort y = (ushort)lastHeadPos.Y;
+        //ushort z = (ushort)lastHeadPos.Z;
+        //data.LastHeadPos = default(Vec3S32);
+        //Map.BroadcastRevert(x, y, z);
+        RemoveFlagBot(p);
     }
 
     private void DrawPlayerFlag(Player p, MyCtfData data)
     {
         Vec3S32 blockCoords = p.Pos.BlockCoords;
         blockCoords.Y += 3;
-        if (!(blockCoords == data.LastHeadPos))
-        {
-            ResetPlayerFlag(p, data);
-            data.LastHeadPos = blockCoords;
-            ushort x = (ushort)blockCoords.X;
-            ushort y = (ushort)blockCoords.Y;
-            ushort z = (ushort)blockCoords.Z;
-            MyCtfTeam ctfTeam = Opposing(TeamOf(p));
-            Map.BroadcastChange(x, y, z, ctfTeam.FlagBlock);
-        }
+        //if (!(blockCoords == data.LastHeadPos))
+        //{
+        //    ResetPlayerFlag(p, data);
+        //    data.LastHeadPos = blockCoords;
+        //    ushort x = (ushort)blockCoords.X;
+        //    ushort y = (ushort)blockCoords.Y;
+        //    ushort z = (ushort)blockCoords.Z;
+        //    MyCtfTeam ctfTeam = Opposing(TeamOf(p));
+        //    Map.BroadcastChange(x, y, z, ctfTeam.FlagBlock);
+        //}
+        PlayerBot flagBot = FindFlagBot(p);
+
+        Position playerPos = p.Pos;
+        playerPos.Y += flagBotYOffset;
+        flagBot.Pos = playerPos;
+
+        Orientation playerRot = p.Rot;   
+        playerRot.HeadX = 0;
+        flagBot.Rot = playerRot;       
     }
 
     public override void EndRound()
@@ -642,7 +650,6 @@ public class MyCTFGame : RoundsGame
             {
                 Map.Message(infoColor + "The round ended in a tie!");
             }
-
             ResetTeams();
             ResetFlagsState();
             foreach (Player player in PlayerInfo.Online.Items)
@@ -663,6 +670,7 @@ public class MyCTFGame : RoundsGame
 
         MyCtfData ctfData = Get(p);
         ctfData.HasFlag = true;
+        SpawnFlagBot(p);
         DrawPlayerFlag(p, ctfData);
 
         // TODO: Clean up
@@ -1049,5 +1057,66 @@ public class MyCTFGame : RoundsGame
                 }
             }
         }
+    }
+
+    // Spawn the bot
+    // Define bot properties: model, (skin?), scale
+    // In DrawFlag(), summon the bot to the player using bot.pos = p.pos
+    private void SpawnFlagBot(Player p)
+    {
+        MyCtfTeam team = TeamOf(p);
+        if (team == null || p.Level != Map)
+        {
+            return;
+        }
+        string botName = team.Name == "Blue" ? "Red" : "Blue";
+        botName = botName.Replace(' ', '_');
+        
+        PlayerBot flagBot = new PlayerBot(botName, Map);
+        flagBot.Owner = Player.Console.name;
+        flagBot.CreationDate = DateTime.UtcNow.ToUnixTime();
+        flagBot.DisplayName = "empty";
+        flagBot.Pos = p.Pos;
+        flagBot.Model = (team == Blue ? Red.FlagBlock.ToString() : Blue.FlagBlock.ToString()) + "|" + flagBotScale;
+   
+        Orientation rot = new Orientation();
+        rot.RotY = p.Rot.RotY;
+        rot.HeadX = 0;
+        flagBot.Rot = rot;
+
+        PlayerBot.Add(flagBot);
+    }
+
+    private void RemoveFlagBot(Player p)
+    {
+        Map.Message("Removing flag bot...");
+        if (p.Level != Map)
+        { 
+            return;
+        }
+        PlayerBot flagBot = FindFlagBot(p);   
+        if (flagBot != null)
+        {
+            PlayerBot.Remove(flagBot);
+        }
+    }
+
+    private PlayerBot FindFlagBot(Player p)
+    {
+        if (p.Level != Map)
+        {
+            return null;
+        }
+        MyCtfTeam team = TeamOf(p);
+        PlayerBot flagBot = null;
+        foreach (PlayerBot bot in Map.Bots.Items)
+        {
+            if (bot.name == Opposing(team).Name)
+            {
+                flagBot = bot;
+                break;
+            }
+        }
+        return flagBot;
     }
 }
