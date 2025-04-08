@@ -13,6 +13,7 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <LangVersion>10</LangVersion>
@@ -48,7 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdMcDebug.cs" />
+    <Compile Include="OnCTFPlayerInfoUpdated.cs" />
     <Compile Include="OnWeaponContact.cs" />
+    <Compile Include="OnCTFPlayerInfoUpdatedEvent.cs" />
     <Compile Include="OnWeaponContactEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

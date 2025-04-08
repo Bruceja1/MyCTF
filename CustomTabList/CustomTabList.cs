@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 using MCGalaxy;
 using MCGalaxy.Config;
 using MCGalaxy.Events.EntityEvents;
 using MCGalaxy.Modules.Games.MyCTF;
+using MyCTF;
 
 namespace MCGalaxy
 {
@@ -16,6 +18,8 @@ namespace MCGalaxy
 
         public static string path = "./plugins/CustomTabList";
 
+        // Stores the playerflag and group for each player
+        Dictionary<Player, Dictionary<string, string>> playerCTFInfo = new Dictionary<Player, Dictionary<string, string>>();
 
         public class Config
         {
@@ -61,6 +65,7 @@ namespace MCGalaxy
             cfg.Load();
 
             OnTabListEntryAddedEvent.Register(HandleTabListEntryAdded, Priority.High);
+            OnCTFPlayerInfoUpdatedEvent.Register(HandleCTFPlayerInfoUpdated, Priority.High);
         }
 
         void HandleTabListEntryAdded(Entity entity, ref string name, ref string group, Player p)
@@ -69,8 +74,7 @@ namespace MCGalaxy
             if (pl == null) return;
 
             string pingColor = "&8";
-            string flag = GetFlagOf(pl);
-
+          
             if (pl.Session.Ping.AveragePing() > 0 && pl.Session.Ping.AveragePing() < 50) pingColor = "&a";
             if (pl.Session.Ping.AveragePing() >= 50 && pl.Session.Ping.AveragePing() < 100) pingColor = "&e";
             if (pl.Session.Ping.AveragePing() > 100 && pl.Session.Ping.AveragePing() < 200) pingColor = "&6";
@@ -89,30 +93,32 @@ namespace MCGalaxy
                 .Replace("[afk]", pl.IsAfk ? "(afk)" : "")
                 .Replace("[ping]", pl.Session.Ping.AveragePing().ToString())
                 .Replace("[pingcolor]", pingColor)
-                .Replace("[flag]", flag);
+                .Replace("[flag]", playerCTFInfo.ContainsKey(pl) ? playerCTFInfo[pl]["flag"] : "");
 
-            group = GetGroupOf(pl);           
+            if (playerCTFInfo.ContainsKey(pl) && playerCTFInfo[pl]["group"] != null)
+            {
+                //pl.Message("playerCTFInfo contains group key and its value is " + playerCTFInfo[pl]["group"]);
+                group = playerCTFInfo[pl]["group"];
+            }
         }
 
         public override void Unload(bool shutdown)
         {
             OnTabListEntryAddedEvent.Unregister(HandleTabListEntryAdded);
+            OnCTFPlayerInfoUpdatedEvent.Unregister(HandleCTFPlayerInfoUpdated);
         }
 
-        public string GetFlagOf(Player p)
+        void HandleCTFPlayerInfoUpdated(Player p, string flag, string group)
         {
-            MyCTFGame instance = MyCTFGame.Instance;
-            if (instance == null)
+            if (!playerCTFInfo.ContainsKey(p))
             {
-                p.Message("No MyCTFGame instance!");
-                return "";
+                playerCTFInfo.Add(p, new Dictionary<string, string>());
+                playerCTFInfo[p].Add("flag", "");
+                playerCTFInfo[p].Add("group", null);
             }
-            return instance.GetFlagOf(p);
-        }
-        public string GetGroupOf(Player p)
-        {
-            MyCTFGame instance = MyCTFGame.Instance;
-            return instance.GetGroupOf(p);
+            //p.Message("Updating info. Your flag is " + flag + "Your group is " + group);
+            playerCTFInfo[p]["flag"] = flag;
+            playerCTFInfo[p]["group"] = group;
         }
     }   
 }

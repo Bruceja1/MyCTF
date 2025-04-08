@@ -17,10 +17,7 @@ public sealed class CmdMcDebug : Command2
 
     public override void Use(Player p, string message, CommandData data)
     {   
-        if (message.CaselessEq("key"))
-        {
-            p.Message($"The key {(p.Extras.Contains("MCG_MYCTF_DATA") ? "exists" : "does not exist")}");
-        }
+        p.Message($"The key {(p.Extras.Contains("MCG_MYCTF_DATA") ? "exists" : "does not exist")}");
     }
 
     public override void Help(Player p)

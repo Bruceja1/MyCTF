@@ -20,6 +20,7 @@ using MCGalaxy.Network;
 using static System.Net.Mime.MediaTypeNames;
 using System.Xml.Linq;
 using MCGalaxy.Commands;
+using MyCTF;
 
 namespace MCGalaxy.Modules.Games.MyCTF;
 
@@ -28,9 +29,7 @@ public class MyCTFGame : RoundsGame
     private struct MyCtfStats
     {
         public int Points;
-
         public int Captures;
-
         public int Tags;
         public int Kills;
     }
@@ -168,8 +167,16 @@ public class MyCTFGame : RoundsGame
 
     private void ResetTeams()
     {
-        Blue.Members.Clear();
-        Red.Members.Clear();
+        //Blue.Members.Clear();
+        //Red.Members.Clear();
+        foreach (Player p in Blue.Members.Items)
+        {
+            RemoveFromTeam(p);
+        }
+        foreach (Player p in Red.Members.Items)
+        {
+            RemoveFromTeam(p);
+        }
         Blue.Captures = 0;
         Red.Captures = 0;
     }
@@ -249,6 +256,37 @@ public class MyCTFGame : RoundsGame
         //p.name = "test";
         //p.SkinName = "test";
         //p.SuperName = "test";
+    }
+
+    private void LeaveTeam(Player p)
+    {
+        MyCtfTeam team = TeamOf(p);
+        if (team == null)
+        {
+            p.Message(infoColor + "You are not on a team!");
+            return;
+        }
+        if (RoundInProgress)
+        {
+            p.Message(infoColor + "You cannot leave your team during a match!");
+            return;
+        }
+        RemoveFromTeam(p);      
+        Map.Message(p.ColoredName + infoColor + " left the " + team.ColoredName + infoColor + " team");
+        p.Message(infoColor + "You have left the " + team.ColoredName + infoColor + " team.");
+             
+    }
+
+    private void RemoveFromTeam(Player p)
+    {
+        MyCtfTeam team = TeamOf(p);
+        if (team == null)
+        {
+            return;
+        }
+        team.Members.Remove(p);
+        ResetPlayerColor(p);
+        UpdateTabList(p);
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -555,7 +593,7 @@ public class MyCTFGame : RoundsGame
         foreach (Player player in array)
         {
             if (player.level != Map)
-            {
+            {              
                 continue;
             }
 
@@ -594,7 +632,7 @@ public class MyCTFGame : RoundsGame
                 }
             }
             UpdateTabList(player);
-        }
+        }      
     }
 
     private void ResetPlayerFlag(Player p, MyCtfData data)
@@ -998,9 +1036,10 @@ public class MyCTFGame : RoundsGame
     }
 
     public string GetGroupOf(Player p)
-    {     
+    {
         MyCtfTeam ctfTeam = TeamOf(p);
         MyCtfData ctfData = TryGet(p);
+
         if (p.Level != Map)
         {
             return "&fOn " + p.Level.MapName;
@@ -1013,25 +1052,19 @@ public class MyCTFGame : RoundsGame
         {
             return ctfTeam.ColoredName + " team";
         }
-        else
+        else if (Running)
         {
             return "&7Teamless cunts";
-        }        
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public void UpdateTabList(Player p, bool self = true)
     {
-        //string col = p.color;
-        //OnSettingColorEvent.Call(p, ref col);
-        //string tabName = "";
-        //string tabGroup = "";
-        //foreach (Player player in PlayerInfo.Online.Items)
-        //{
-        //    if (player.Level == Map)
-        //    {
-        //        OnTabListEntryAddedEvent.Call(p, ref tabName, ref tabGroup, player);
-        //    }
-        //}
+        OnCTFPlayerInfoUpdatedEvent.Call(p, GetFlagOf(p), GetGroupOf(p));
         Player[] items = PlayerInfo.Online.Items;
         Player[] array = items;
         foreach (Player player in array)

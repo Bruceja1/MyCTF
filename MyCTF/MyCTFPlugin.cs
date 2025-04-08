@@ -28,16 +28,16 @@ public sealed class MyCTFPlugin : Plugin
 
     public override void Unload(bool shutdown)
     {
-        foreach (Player player in PlayerInfo.Online.Items)
-        {
-            MyCTFGame.ClearData(player); // Debugging
-        }
-
         MyCTFGame instance = MyCTFGame.Instance;
+        if (instance == null)
+        {
+            PlayerInfo.FindExact("Bruceja").Message("instance is null when trying to unload!");
+        }
         if (instance.Running)
         {
             instance.Running = false;
         }
+
         IEvent<OnConfigUpdated>.Unregister(instance.ReloadConfig);
         Command.Unregister(cmdMyCTF);
         TopStat.Unregister(killStat);
