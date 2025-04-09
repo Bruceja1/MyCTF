@@ -139,7 +139,7 @@ public class MyCTFGame : RoundsGame
     {
         p.Message("{0} &Steam: {1} captures", Blue.ColoredName, Blue.Captures);
         p.Message("{0} &Steam: {1} captures", Red.ColoredName, Red.Captures);
-        MyCtfData playerData = TryGet(p);
+        MyCtfData playerData = Get(p);
         p.Message($"Captures: {playerData.Captures.ToString()}");
         p.Message($"Tags: {playerData.Tags.ToString()}");
         p.Message($"Kills: {playerData.Kills.ToString()}");
@@ -149,7 +149,7 @@ public class MyCTFGame : RoundsGame
         p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
         p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
         p.Message($"LastHeadPos: {playerData.LastHeadPos.ToString()}");
-        p.Message($"Your team is: {TeamOf(p).Name}");
+        p.Message($"Your team is: {(TeamOf(p) == null ? "No team" : TeamOf(p).Name)}");
     }
 
     protected override void StartGame()
@@ -218,6 +218,7 @@ public class MyCTFGame : RoundsGame
             DropFlag(p, ctfTeam);
             RemoveFromTeam(p);           
             ResetPlayerColor(p);
+            UpdateTabList(p);
         }
     }
 
@@ -251,8 +252,7 @@ public class MyCTFGame : RoundsGame
         p.UpdateColor(team.Color);
         Map.Message(p.ColoredName + Config.InfoColor + " joined the " + team.ColoredName + Config.InfoColor + " team");
         p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");
-        UpdateTabList(p);
-
+        //UpdateTabList(p);
         // Trying to find out how to update the name above a player's head only.
         //p.DisplayName = "hi";
         //p.BrushName = "test";       
@@ -289,7 +289,6 @@ public class MyCTFGame : RoundsGame
         }
         team.Members.Remove(p);
         ResetPlayerColor(p);
-        UpdateTabList(p);
     }
 
     private bool OnOwnTeamSide(int z, MyCtfTeam team)
@@ -417,6 +416,8 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map || !Get(p).TeamChatting)
         {
+            Chat.MessageChat(ChatScope.Level, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + "&f" + message, Map, null);
+            p.cancelchat = true;
             return;
         }
 
@@ -567,11 +568,12 @@ public class MyCTFGame : RoundsGame
             foreach (Player player in array)
             {
                 if (player.level == Map)
-                {
+                {                   
                     PlayerJoinedGame(player);
-                    MoveToTeamSpawn(player);
+                    MoveToTeamSpawn(player);                   
                 }              
             }
+            
             while (Running && RoundInProgress && !HasSomeoneWon() && !EmptyTeam())
             {
                 Tick();
@@ -601,7 +603,8 @@ public class MyCTFGame : RoundsGame
             {              
                 continue;
             }
-
+            UpdateStatusHUD(player);
+            UpdateTabList(player);
             MyCtfTeam ctfTeam = TeamOf(player);
             MyCtfData ctfData = Get(player);
             if (ctfData.HasFlag)
@@ -714,6 +717,8 @@ public class MyCTFGame : RoundsGame
             foreach (Player player in PlayerInfo.Online.Items)
             {
                 ResetPlayerColor(player);
+                UpdateStatusHUD(player);
+                UpdateTabList(player);
             }
             Map.Message("Starting next round!");
         }
@@ -731,7 +736,6 @@ public class MyCTFGame : RoundsGame
         ctfData.HasFlag = true;
         SpawnFlagBot(p);
         DrawPlayerFlag(p, ctfData);
-        UpdateTabList(p);
     }
 
     private void ReturnFlag(Player p, MyCtfTeam team)
@@ -753,8 +757,7 @@ public class MyCTFGame : RoundsGame
             ctfData.Captures++;
             team.Captures++;
             MyCtfTeam ctfTeam = Opposing(team);
-            ctfTeam.RespawnFlag(Map);
-            UpdateTabList(p);
+            ctfTeam.RespawnFlag(Map);         
             AwardXP(p, Config.CaptureXPReward);
         }
         else
@@ -777,7 +780,6 @@ public class MyCTFGame : RoundsGame
             //ctfData.Points -= cfg.Capture_PointsLost;
             MyCtfTeam ctfTeam = Opposing(team);
             ctfTeam.RespawnFlag(Map);
-            UpdateTabList(p);
         }
     }
 
@@ -1081,7 +1083,7 @@ public class MyCTFGame : RoundsGame
     }
 
     public void UpdateTabList(Player p, bool self = true)
-    {
+    {       
         if (!PlayerInfo.Online.Items.Contains(p))
         {
             return;
@@ -1174,7 +1176,29 @@ public class MyCTFGame : RoundsGame
             return;
         }
         ctfData.XP += amount;
-        p.Message("&a+" + amount + " &aXP");
-        //SaveStats(p);
+
+        string message = "&a+" + amount + " &aXP";
+        p.Message(message);
+        p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
+    }
+
+    private void UpdateStatusHUD(Player p)
+    {
+        if (Map == null || Blue == null || Red == null)
+        {
+            // TODO: ResetStatusHUD()
+            //p.SendCpeMessage(CpeMessageType.Status1, "");
+            //p.SendCpeMessage(CpeMessageType.Status2, "");
+            //p.SendCpeMessage(CpeMessageType.Status3, "");
+            return;
+        }
+        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
+        string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
+        string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
+      
+        //Map.Message("Sending HUD to player " + p.name);
+        p.SendCpeMessage(CpeMessageType.Status1, mapStatus);
+        p.SendCpeMessage(CpeMessageType.Status2, blueStatus);
+        p.SendCpeMessage(CpeMessageType.Status3, redStatus);                                  
     }
 }
