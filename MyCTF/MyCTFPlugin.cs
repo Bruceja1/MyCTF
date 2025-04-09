@@ -35,6 +35,7 @@ public sealed class MyCTFPlugin : Plugin
         }
         if (instance.Running)
         {
+            instance.End();
             instance.Running = false;
         }
 

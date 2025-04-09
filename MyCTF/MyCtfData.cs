@@ -10,6 +10,7 @@ internal sealed class MyCtfData
     public int Tags;
 
     public int Points;
+    public int XP;
 
     public bool HasFlag;
 

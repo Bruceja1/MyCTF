@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using System.Linq;
 using MCGalaxy;
 using MCGalaxy.Config;
 using MCGalaxy.Events.EntityEvents;
@@ -69,10 +69,10 @@ namespace MCGalaxy
         }
 
         void HandleTabListEntryAdded(Entity entity, ref string name, ref string group, Player p)
-        {
+        {           
             Player pl = entity as Player;
             if (pl == null) return;
-
+            
             string pingColor = "&8";
           
             if (pl.Session.Ping.AveragePing() > 0 && pl.Session.Ping.AveragePing() < 50) pingColor = "&a";
@@ -109,7 +109,7 @@ namespace MCGalaxy
         }
 
         void HandleCTFPlayerInfoUpdated(Player p, string flag, string group)
-        {
+        {          
             if (!playerCTFInfo.ContainsKey(p))
             {
                 playerCTFInfo.Add(p, new Dictionary<string, string>());
@@ -118,7 +118,7 @@ namespace MCGalaxy
             }
             //p.Message("Updating info. Your flag is " + flag + "Your group is " + group);
             playerCTFInfo[p]["flag"] = flag;
-            playerCTFInfo[p]["group"] = group;
+            playerCTFInfo[p]["group"] = group;           
         }
     }   
 }

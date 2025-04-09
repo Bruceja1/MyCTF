@@ -27,20 +27,20 @@ public sealed class MyCTFMapConfig : RoundsGameMapConfig
     [ConfigInt("map.line.z", null, 0, int.MinValue, int.MaxValue)]
     public int ZDivider;
 
-    [ConfigInt("game.maxpoints", null, 3, int.MinValue, int.MaxValue)]
-    public int RoundPoints = 3;
+    //[ConfigInt("game.maxpoints", null, 3, int.MinValue, int.MaxValue)]
+    //public int RoundPoints = 3;
 
-    [ConfigInt("game.tag.points-gain", null, 5, int.MinValue, int.MaxValue)]
-    public int Tag_PointsGained = 5;
+    //[ConfigInt("game.tag.points-gain", null, 5, int.MinValue, int.MaxValue)]
+    //public int Tag_PointsGained = 5;
 
-    [ConfigInt("game.tag.points-lose", null, 5, int.MinValue, int.MaxValue)]
-    public int Tag_PointsLost = 5;
+    //[ConfigInt("game.tag.points-lose", null, 5, int.MinValue, int.MaxValue)]
+    //public int Tag_PointsLost = 5;
 
-    [ConfigInt("game.capture.points-gain", null, 10, int.MinValue, int.MaxValue)]
-    public int Capture_PointsGained = 10;
+    //[ConfigInt("game.capture.points-gain", null, 10, int.MinValue, int.MaxValue)]
+    //public int Capture_PointsGained = 10;
 
-    [ConfigInt("game.capture.points-lose", null, 10, int.MinValue, int.MaxValue)]
-    public int Capture_PointsLost = 10;
+    //[ConfigInt("game.capture.points-lose", null, 10, int.MinValue, int.MaxValue)]
+    //public int Capture_PointsLost = 10;
 
     private const string propsDir = "properties/MyCTF/";
 

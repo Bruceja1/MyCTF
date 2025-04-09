@@ -21,6 +21,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Xml.Linq;
 using MCGalaxy.Commands;
 using MyCTF;
+using System.Linq;
 
 namespace MCGalaxy.Modules.Games.MyCTF;
 
@@ -32,6 +33,7 @@ public class MyCTFGame : RoundsGame
         public int Captures;
         public int Tags;
         public int Kills;
+        public int XP;
     }
     
     private MyCTFMapConfig cfg = new MyCTFMapConfig();
@@ -46,23 +48,20 @@ public class MyCTFGame : RoundsGame
 
     private const string myctfExtrasKey = "MCG_MYCTF_DATA";
 
-    private static ColumnDesc[] myctfTable = new ColumnDesc[6]
+    private static ColumnDesc[] myctfTable = new ColumnDesc[7]
     {
         new ColumnDesc("ID", ColumnType.Integer, 0, autoInc: true, priKey: true, notNull: true),
         new ColumnDesc("Name", ColumnType.VarChar, 20),
         new ColumnDesc("Points", ColumnType.UInt24),
         new ColumnDesc("Captures", ColumnType.UInt24),
         new ColumnDesc("tags", ColumnType.UInt24),
-        new ColumnDesc("Kills", ColumnType.UInt24)
+        new ColumnDesc("Kills", ColumnType.UInt24),
+        new ColumnDesc("XP", ColumnType.UInt24),
     };
 
     public override string GameName => "MyCTF";
 
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
-    private const int countdownTimer = 5;
-    private const string infoColor = "&6";
-    private const string flagBotScale = "0.8";
-    private const int flagBotYOffset = 85; 
 
     public override RoundsGameConfig GetConfig()
     {
@@ -88,6 +87,7 @@ public class MyCTFGame : RoundsGame
         ctfData.Points = ctfStats.Points;
         ctfData.Tags = ctfStats.Tags;
         ctfData.Kills = ctfStats.Kills;
+        ctfData.XP = ctfStats.XP;
         p.Extras["MCG_MYCTF_DATA"] = ctfData; // TODO: Why not p.Extras[myctfExtrasKey] = ctfData; ?
         return ctfData;
     }
@@ -144,6 +144,7 @@ public class MyCTFGame : RoundsGame
         p.Message($"Tags: {playerData.Tags.ToString()}");
         p.Message($"Kills: {playerData.Kills.ToString()}");
         p.Message($"Points: {playerData.Points.ToString()}");
+        p.Message($"XP: {playerData.XP.ToString()}");
         p.Message($"HasFlag: {playerData.HasFlag.ToString()}");
         p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
         p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
@@ -213,8 +214,9 @@ public class MyCTFGame : RoundsGame
         MyCtfTeam ctfTeam = TeamOf(p);
         if (ctfTeam != null)
         {
-            ctfTeam.Members.Remove(p);
+            //ctfTeam.Members.Remove(p);
             DropFlag(p, ctfTeam);
+            RemoveFromTeam(p);           
             ResetPlayerColor(p);
         }
     }
@@ -247,8 +249,9 @@ public class MyCTFGame : RoundsGame
         Get(p).HasFlag = false;
         team.Members.Add(p);
         p.UpdateColor(team.Color);
-        Map.Message(p.ColoredName + infoColor + " joined the " + team.ColoredName + infoColor + " team");
-        p.Message(infoColor + "You are now on the " + team.ColoredName + infoColor + " team!");
+        Map.Message(p.ColoredName + Config.InfoColor + " joined the " + team.ColoredName + Config.InfoColor + " team");
+        p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");
+        UpdateTabList(p);
 
         // Trying to find out how to update the name above a player's head only.
         //p.DisplayName = "hi";
@@ -263,17 +266,17 @@ public class MyCTFGame : RoundsGame
         MyCtfTeam team = TeamOf(p);
         if (team == null)
         {
-            p.Message(infoColor + "You are not on a team!");
+            p.Message(Config.InfoColor + "You are not on a team!");
             return;
         }
         if (RoundInProgress)
         {
-            p.Message(infoColor + "You cannot leave your team during a match!");
+            p.Message(Config.InfoColor + "You cannot leave your team during a match!");
             return;
         }
         RemoveFromTeam(p);      
-        Map.Message(p.ColoredName + infoColor + " left the " + team.ColoredName + infoColor + " team");
-        p.Message(infoColor + "You have left the " + team.ColoredName + infoColor + " team.");
+        Map.Message(p.ColoredName + Config.InfoColor + " left the " + team.ColoredName + Config.InfoColor + " team");
+        p.Message(Config.InfoColor + "You have left the " + team.ColoredName + Config.InfoColor + " team.");
              
     }
 
@@ -338,6 +341,7 @@ public class MyCTFGame : RoundsGame
         result.Captures = record.GetInt("Captures");
         result.Tags = record.GetInt("Tags");
         result.Kills = record.GetInt("Kills");
+        result.XP = record.GetInt("XP");
         return result;
     }
 
@@ -353,17 +357,18 @@ public class MyCTFGame : RoundsGame
 
     protected override void SaveStats(Player p)
     {
+        p.Message("Saving data...");
         MyCtfData ctfData = TryGet(p);
         if (ctfData == null)
         {
             return;
         }
-        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0)
+        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0 || ctfData.XP != 0)
         {
-            object[] args = new object[5] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, p.name };
-            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3", "WHERE Name=@4", args) == 0)
+            object[] args = new object[6] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, ctfData.XP, p.name };
+            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3, XP=@4", "WHERE Name=@5", args) == 0)
             {
-                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, Name", args);
+                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, XP, Name", args);
             }
         }
     }
@@ -577,9 +582,9 @@ public class MyCTFGame : RoundsGame
 
     private bool HasSomeoneWon()
     {
-        if (Blue.Captures < cfg.RoundPoints)
+        if (Blue.Captures < Config.MaxCaptures)
         {
-            return Red.Captures >= cfg.RoundPoints;
+            return Red.Captures >= Config.MaxCaptures;
         }
 
         return true;
@@ -625,13 +630,13 @@ public class MyCTFGame : RoundsGame
                         DropFlag(player, ctfTeam2);                       
                     }
 
-                    ctfData.Points += cfg.Tag_PointsGained;
-                    ctfData2.Points -= cfg.Tag_PointsLost;
+                    //ctfData.Points += cfg.Tag_PointsGained;
+                    //ctfData2.Points -= cfg.Tag_PointsLost;
                     ctfData.Tags++;
                     ctfData2.TagCooldown = false;
                 }
             }
-            UpdateTabList(player);
+            //UpdateTabList(player);
         }      
     }
 
@@ -663,7 +668,7 @@ public class MyCTFGame : RoundsGame
         PlayerBot flagBot = FindFlagBot(p);
 
         Position playerPos = p.Pos;
-        playerPos.Y += flagBotYOffset;
+        playerPos.Y += Config.FlagBotYOffset;
         flagBot.Pos = playerPos;
 
         Orientation playerRot = p.Rot;   
@@ -678,15 +683,31 @@ public class MyCTFGame : RoundsGame
             RoundInProgress = false;
             if (Blue.Captures > Red.Captures)
             {
-                Map.Message(Blue.ColoredName + infoColor + " won this round of CTF!");
+                Map.Message(Blue.ColoredName + Config.InfoColor + " won this round of CTF!");
+                foreach (Player p in Blue.Members.Items)
+                {
+                    if (p == null)
+                    {
+                        continue;
+                    }
+                    AwardXP(p, Config.WinXPReward);
+                }
             }
             else if (Red.Captures > Blue.Captures)
             {
-                Map.Message(Red.ColoredName + infoColor + " won this round of CTF!");
+                Map.Message(Red.ColoredName + Config.InfoColor + " won this round of CTF!");
+                foreach (Player p in Red.Members.Items)
+                {
+                    if (p == null)
+                    {
+                        continue;
+                    }
+                    AwardXP(p, Config.WinXPReward);
+                }
             }
             else
             {
-                Map.Message(infoColor + "The round ended in a tie!");
+                Map.Message(Config.InfoColor + "The round ended in a tie!");
             }
             ResetFlagsState();
             ResetTeams();           
@@ -702,7 +723,7 @@ public class MyCTFGame : RoundsGame
     {     
         MyCtfTeam ctfTeam = Opposing(team);
 
-        string message = team.Color + p.DisplayName + infoColor + " has taken the " + ctfTeam.ColoredName + infoColor + " team's flag!";
+        string message = team.Color + p.DisplayName + Config.InfoColor + " has taken the " + ctfTeam.ColoredName + Config.InfoColor + " team's flag!";
         Map.Message(message);
         Command.Find("Announce").Use(Player.Console, "global " + message);
 
@@ -710,14 +731,7 @@ public class MyCTFGame : RoundsGame
         ctfData.HasFlag = true;
         SpawnFlagBot(p);
         DrawPlayerFlag(p, ctfData);
-
-        // TODO: Clean up
-        //string tabName = p.ColoredName;
-        //string tabNick = tabName + " " + Opposing(team).Color + "▒";
-        //string text = p.level.name;
-        //string group = (Server.Config.TablistGlobal ? ("On " + text) : "&fPlayers");
-        //TabList.Remove(p, p);        
-        //p.Session.SendAddTabEntry(byte.MaxValue, p.truename, tabNick, group, groupRank);                        
+        UpdateTabList(p);
     }
 
     private void ReturnFlag(Player p, MyCtfTeam team)
@@ -728,22 +742,24 @@ public class MyCTFGame : RoundsGame
         if (ctfData.HasFlag)
         {
             MyCtfTeam opposing = Opposing(team);
-            string message = team.Color + p.DisplayName + infoColor + " has captured the " + opposing.Color + opposing.Name + infoColor + " team's flag!";
+            string message = team.Color + p.DisplayName + Config.InfoColor + " has captured the " + opposing.Color + opposing.Name + Config.InfoColor + " team's flag!";
 
             Map.Message(message);
             Command.Find("Announce").Use(Player.Console, "global " + message);
 
             ctfData.HasFlag = false;
             ResetPlayerFlag(p, ctfData);
-            ctfData.Points += cfg.Capture_PointsGained;
+            //ctfData.Points += cfg.Capture_PointsGained;
             ctfData.Captures++;
             team.Captures++;
             MyCtfTeam ctfTeam = Opposing(team);
             ctfTeam.RespawnFlag(Map);
+            UpdateTabList(p);
+            AwardXP(p, Config.CaptureXPReward);
         }
         else
         {
-            p.Message(infoColor + "You cannot take your own flag!");
+            p.Message(Config.InfoColor + "You cannot take your own flag!");
         }
     }
 
@@ -753,14 +769,15 @@ public class MyCTFGame : RoundsGame
         if (ctfData.HasFlag)
         {
             MyCtfTeam opposing = Opposing(team);
-            string message = team.Color + p.DisplayName + infoColor + " has dropped the " + opposing.Color + opposing.Name + infoColor + " team's flag!";          
+            string message = team.Color + p.DisplayName + Config.InfoColor + " has dropped the " + opposing.Color + opposing.Name + Config.InfoColor + " team's flag!";          
             ctfData.HasFlag = false;
             ResetPlayerFlag(p, ctfData);
             Map.Message(message);
             Command.Find("Announce").Use(Player.Console, "global " + message);
-            ctfData.Points -= cfg.Capture_PointsLost;
+            //ctfData.Points -= cfg.Capture_PointsLost;
             MyCtfTeam ctfTeam = Opposing(team);
             ctfTeam.RespawnFlag(Map);
+            UpdateTabList(p);
         }
     }
 
@@ -771,11 +788,12 @@ public class MyCTFGame : RoundsGame
 
         if (playerTeam != null && opponentTeam != null && playerTeam != opponentTeam)
         {
-            string deathMessage = opponent.ColoredName + infoColor + " was killed by " + p.ColoredName!;
+            string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
             opponent.HandleDeath(4, deathMessage);
 
             MyCtfData ctfData = Get(p);
             ctfData.Kills += 1;
+            AwardXP(p, Config.KillXPReward);
         }
     }
 
@@ -788,13 +806,13 @@ public class MyCTFGame : RoundsGame
 
         string message = "";
 
-        while (elapsedTime.Seconds < countdownTimer)
+        while (elapsedTime.Seconds < Config.CountdownTimer)
         {
             if (!Running | RoundInProgress)
             {
                 return;
             }
-            message = $"global &bMatch starts in &f{countdownTimer - elapsedTime.Seconds} &bseconds!";
+            message = $"global &bMatch starts in &f{Config.CountdownTimer - elapsedTime.Seconds} &bseconds!";
 
             Thread.Sleep(100); // Prevents the while loop from freezing the server
 
@@ -804,7 +822,7 @@ public class MyCTFGame : RoundsGame
             }
 
             // When the countdown reaches 5, announce the time left every second instead of every ten seconds.
-            if (countdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0)
+            if (Config.CountdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0)
             {
                 Command.Find("Announce").Use(Player.Console, message);
             }
@@ -1050,11 +1068,11 @@ public class MyCTFGame : RoundsGame
         }
         else if (ctfTeam != null)
         {
-            return ctfTeam.ColoredName + " team";
+            return ctfTeam.ColoredName + " team ";
         }
         else if (Running)
         {
-            return "&7Teamless cunts";
+            return "&7Spectators";
         }
         else
         {
@@ -1064,6 +1082,10 @@ public class MyCTFGame : RoundsGame
 
     public void UpdateTabList(Player p, bool self = true)
     {
+        if (!PlayerInfo.Online.Items.Contains(p))
+        {
+            return;
+        }
         OnCTFPlayerInfoUpdatedEvent.Call(p, GetFlagOf(p), GetGroupOf(p));
         Player[] items = PlayerInfo.Online.Items;
         Player[] array = items;
@@ -1109,7 +1131,7 @@ public class MyCTFGame : RoundsGame
         flagBot.CreationDate = DateTime.UtcNow.ToUnixTime();
         flagBot.DisplayName = "empty";
         flagBot.Pos = p.Pos;
-        flagBot.Model = (team == Blue ? Red.FlagBlock.ToString() : Blue.FlagBlock.ToString()) + "|" + flagBotScale;
+        flagBot.Model = (team == Blue ? Red.FlagBlock.ToString() : Blue.FlagBlock.ToString()) + "|" + Config.FlagBotScale;
    
         Orientation rot = new Orientation();
         rot.RotY = p.Rot.RotY;
@@ -1121,10 +1143,6 @@ public class MyCTFGame : RoundsGame
 
     private void RemoveFlagBot(Player p)
     {
-        if (p.Level != Map)
-        {
-            return;
-        }
         PlayerBot flagBot = FindFlagBot(p);
         if (flagBot != null)
         {
@@ -1134,10 +1152,6 @@ public class MyCTFGame : RoundsGame
 
     private PlayerBot FindFlagBot(Player p)
     {
-        if (p.Level != Map)
-        {
-            return null;
-        }
         MyCtfTeam team = TeamOf(p);
         PlayerBot flagBot = null;
         foreach (PlayerBot bot in Map.Bots.Items)
@@ -1149,5 +1163,18 @@ public class MyCTFGame : RoundsGame
             }
         }
         return flagBot;
+    }
+
+    private void AwardXP(Player p, int amount)
+    {
+        MyCtfData ctfData = TryGet(p);
+        if (ctfData == null)
+        {
+            p.Message("&cAn error occurred while trying to award XP.");
+            return;
+        }
+        ctfData.XP += amount;
+        p.Message("&a+" + amount + " &aXP");
+        //SaveStats(p);
     }
 }
