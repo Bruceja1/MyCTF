@@ -78,8 +78,9 @@ namespace MCGalaxy
             if (pl.Session.Ping.AveragePing() > 0 && pl.Session.Ping.AveragePing() < 30) pingColor = "&2";
             if (pl.Session.Ping.AveragePing() >= 30 && pl.Session.Ping.AveragePing() < 50) pingColor = "&a";
             if (pl.Session.Ping.AveragePing() >= 50 && pl.Session.Ping.AveragePing() < 100) pingColor = "&e";
-            if (pl.Session.Ping.AveragePing() > 100 && pl.Session.Ping.AveragePing() < 200) pingColor = "&6";
-            if (pl.Session.Ping.AveragePing() >= 200) pingColor = "&c";
+            if (pl.Session.Ping.AveragePing() >= 100 && pl.Session.Ping.AveragePing() < 150) pingColor = "&6";
+            if (pl.Session.Ping.AveragePing() >= 150 && pl.Session.Ping.AveragePing() < 200) pingColor = "&c";
+            if (pl.Session.Ping.AveragePing() >= 200) pingColor = "&4";
 
             name = Config.Syntax
                 .Replace("[nick]", pl.ColoredName)

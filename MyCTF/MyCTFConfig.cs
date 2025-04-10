@@ -17,6 +17,9 @@ public sealed class MyCTFConfig : RoundsGameConfig
     [ConfigString("info-color", "Game properties", "&6")]
     public string InfoColor = "&6";
 
+    [ConfigString("chat-color", "Game properties", "&6")]
+    public string ChatColor = "&7";
+
     [ConfigFloat("flag-bot-scale", "Game properties", (float)0.8)]
     public float FlagBotScale = (float)0.8;
 

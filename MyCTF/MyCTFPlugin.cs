@@ -9,16 +9,20 @@ namespace MCGalaxy.Modules.Games.MyCTF;
 public sealed class MyCTFPlugin : Plugin
 {
     private static Command cmdMyCTF = new CmdMyCTF();
+    private static Command cmdXP = new CmdXP();
 
     public override string name => "MyCTF";
     DBTopStat killStat = new DBTopStat("Kills", "Most kills", "MyCTF", "Kills", TopStat.FormatInteger);
     DBTopStat captureStat = new DBTopStat("Captures", "Most captures", "MyCTF", "Captures", TopStat.FormatInteger);
+    DBTopStat xpStat = new DBTopStat("XP", "Most XP", "MyCTF", "XP", TopStat.FormatInteger);
 
     public override void Load(bool startup)
     {
         Command.Register(cmdMyCTF);
+        Command.Register(cmdXP);
         TopStat.Register(killStat);
         TopStat.Register(captureStat);
+        TopStat.Register(xpStat);
         MyCTFGame instance = MyCTFGame.Instance;
         instance.Config.Path = "properties/myctf.properties";
         instance.ReloadConfig();
@@ -29,10 +33,6 @@ public sealed class MyCTFPlugin : Plugin
     public override void Unload(bool shutdown)
     {
         MyCTFGame instance = MyCTFGame.Instance;
-        if (instance == null)
-        {
-            PlayerInfo.FindExact("Bruceja").Message("instance is null when trying to unload!");
-        }
         if (instance.Running)
         {
             instance.End();
@@ -41,7 +41,9 @@ public sealed class MyCTFPlugin : Plugin
 
         IEvent<OnConfigUpdated>.Unregister(instance.ReloadConfig);
         Command.Unregister(cmdMyCTF);
+        Command.Unregister(cmdXP);
         TopStat.Unregister(killStat);
         TopStat.Unregister(captureStat);
+        TopStat.Unregister(xpStat);
     }
 }

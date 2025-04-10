@@ -416,7 +416,7 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map || !Get(p).TeamChatting)
         {
-            Chat.MessageChat(ChatScope.Level, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + "&f" + message, Map, null);
+            Chat.MessageChat(ChatScope.Level, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + Config.ChatColor + message, Map, null);
             p.cancelchat = true;
             return;
         }
@@ -1115,9 +1115,6 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    // Spawn the bot
-    // Define bot properties: model, (skin?), scale
-    // In DrawFlag(), summon the bot to the player using bot.pos = p.pos
     private void SpawnFlagBot(Player p)
     {
         MyCtfTeam team = TeamOf(p);
@@ -1180,11 +1177,13 @@ public class MyCTFGame : RoundsGame
         string message = "&a+" + amount + " &aXP";
         p.Message(message);
         p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
+
+        CheckForPromotion(p, ctfData.XP);
     }
 
     private void UpdateStatusHUD(Player p)
     {
-        if (Map == null || Blue == null || Red == null)
+        if (p == null || Map == null || Blue == null || Red == null)
         {
             // TODO: ResetStatusHUD()
             //p.SendCpeMessage(CpeMessageType.Status1, "");
@@ -1192,13 +1191,82 @@ public class MyCTFGame : RoundsGame
             //p.SendCpeMessage(CpeMessageType.Status3, "");
             return;
         }
-        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
+
+        MyCtfData ctfData = TryGet(p);
+        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + Config.InfoColor + "XP: " + "&f" + (ctfData != null ? ctfData.XP.ToString() : "?") + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
         string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
         string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
       
         //Map.Message("Sending HUD to player " + p.name);
-        p.SendCpeMessage(CpeMessageType.Status1, mapStatus);
-        p.SendCpeMessage(CpeMessageType.Status2, blueStatus);
-        p.SendCpeMessage(CpeMessageType.Status3, redStatus);                                  
+        p.SendCpeMessage(CpeMessageType.Status1, blueStatus);
+        p.SendCpeMessage(CpeMessageType.Status2, redStatus);
+        p.SendCpeMessage(CpeMessageType.Status3, mapStatus);              
+    }
+
+    private int GetNextRankRequirement(Group rank)
+    {
+        if (rank.Name == "Banned")
+        {
+            return 0;
+        }
+        Group previousRank = GetPreviousOrNextRank(rank, true);
+        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.5) + 100;        
+    }
+
+    private Group GetPreviousOrNextRank(Group rank, bool previous)
+    {   if (rank.Name == "Banned")
+        {
+            return null;
+        }
+        List<Group> ranks = Group.AllRanks;
+        for (int i = 0; i < ranks.Count; i++)
+        {
+            if (ranks[i] == rank)
+            {
+                // return the player's previous rank
+                if (previous)
+                {
+                    return ranks[i - 1];
+                }
+                // return the player's next rank
+                else if (!previous)
+                {
+                    return ranks[i + 1];
+                }             
+            }
+        }
+        return null;
+    }
+
+    private void CheckForPromotion(Player p, int xp)
+    {
+        int requirement = GetNextRankRequirement(p.group);
+        if (xp >= requirement)
+        {
+            Group nextRank = GetPreviousOrNextRank(p.group, false);
+            p.group = nextRank;
+            Map.Message(p.ColoredName + Config.InfoColor + " has reached the rank " + nextRank.ColoredName + Config.InfoColor + "!");
+            p.SendCpeMessage(CpeMessageType.Announcement, Config.InfoColor + "You are now ranked " + nextRank.ColoredName + Config.InfoColor + "!");
+        }
+    }
+
+    public void GetXP(Player p)
+    {
+        MyCtfData ctfData = TryGet(p);
+        if (ctfData == null)
+        {
+            p.Message("&cCould not retrieve your XP.");
+            return;
+        }
+        Group rank = p.group;
+        int xp = ctfData.XP;
+        if (rank.Name == "Flagmaster" || rank.Name == "Moderator" || rank.Name == "Developer")
+        {
+            p.Message(Config.InfoColor + "You have " + "&a" + xp.ToString() + " XP" + Config.InfoColor + " and you cannot rank up any further.");
+            return;
+        }  
+        int required = GetNextRankRequirement(rank);
+        Group nextRank = GetPreviousOrNextRank(rank, false);
+        p.Message(Config.InfoColor + "You have " + "&a" + xp.ToString() + " XP" + Config.InfoColor + " and need " + "&a" + (required - xp).ToString() + " XP" + Config.InfoColor + " more to rank up to " + nextRank.ColoredName + Config.InfoColor + "!");
     }
 }

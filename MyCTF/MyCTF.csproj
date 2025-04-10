@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdMyCTF.cs" />
+    <Compile Include="CmdXP.cs" />
     <Compile Include="MyCTFConfig.cs" />
     <Compile Include="MyCtfData.cs" />
     <Compile Include="MyCTFGame.cs" />
