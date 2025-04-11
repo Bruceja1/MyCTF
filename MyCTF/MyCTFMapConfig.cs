@@ -27,6 +27,10 @@ public sealed class MyCTFMapConfig : RoundsGameMapConfig
     [ConfigInt("map.line.z", null, 0, int.MinValue, int.MaxValue)]
     public int ZDivider;
 
+    [ConfigInt("time-in-minutes", null, 10, int.MinValue, int.MaxValue)]
+    public int Time;
+
+
     //[ConfigInt("game.maxpoints", null, 3, int.MinValue, int.MaxValue)]
     //public int RoundPoints = 3;
 
@@ -79,5 +83,6 @@ public sealed class MyCTFMapConfig : RoundsGameMapConfig
         RedSpawn = new Vec3U16(x, num, 0);
         BlueFlagPos = new Vec3U16(x, y, z);
         BlueSpawn = new Vec3U16(x, num, z);
+        Time = 10;
     }
 }

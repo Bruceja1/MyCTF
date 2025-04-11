@@ -25,6 +25,7 @@ using System.Xml.Linq;
 using MCGalaxy.Commands;
 using MyCTF;
 using System.Linq;
+using MCGalaxy.Commands.World;
 
 namespace MCGalaxy.Modules.Games.MyCTF;
 
@@ -65,7 +66,10 @@ public class MyCTFGame : RoundsGame
     public override string GameName => "MyCTF";
 
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
-
+    private MyCTFTimer timer = new MyCTFTimer();
+    // This variable makes sure that the timer announcements at 60s, 30s, 20s, etc do not appear
+    // multiple times a second each.
+    private DateTime lastTimerCpeMsgTime = DateTime.Now;
     public override RoundsGameConfig GetConfig()
     {
         return Config;
@@ -156,7 +160,7 @@ public class MyCTFGame : RoundsGame
     }
 
     protected override void StartGame()
-    {
+    {             
         Blue.RespawnFlag(Map);
         Red.RespawnFlag(Map);
         ResetTeams();
@@ -564,6 +568,7 @@ public class MyCTFGame : RoundsGame
     {
         if (Running)
         {
+            timer.Set(1);
             RoundInProgress = true;
             Player[] items = PlayerInfo.Online.Items;
             Player[] array = items;
@@ -596,6 +601,7 @@ public class MyCTFGame : RoundsGame
 
     private void Tick()
     {
+        timer.DoTimer();
         int dist = (int)(Config.TagDistance * 32f);
         Player[] items = PlayerInfo.Online.Items;
         Player[] array = items;
@@ -686,6 +692,7 @@ public class MyCTFGame : RoundsGame
         if (RoundInProgress)
         {
             RoundInProgress = false;
+            timer.Stop();
             if (Blue.Captures > Red.Captures)
             {
                 Map.Message(Blue.ColoredName + Config.InfoColor + " won this round of CTF!");
@@ -1197,11 +1204,24 @@ public class MyCTFGame : RoundsGame
         string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "&a" + (ctfData != null ? ctfData.XP.ToString() : "?") + " XP" + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
         string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
         string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
-      
+        string timerStatus = Config.InfoColor + "Time left: " + "&f" + timer.Display();
         //Map.Message("Sending HUD to player " + p.name);
         p.SendCpeMessage(CpeMessageType.Status1, blueStatus);
         p.SendCpeMessage(CpeMessageType.Status2, redStatus);
-        p.SendCpeMessage(CpeMessageType.Status3, mapStatus);              
+        p.SendCpeMessage(CpeMessageType.Status3, mapStatus);
+        int timeLeft = timer.GetSecondsLeft();
+        string timeLeftMessage = "&f" + timeLeft + (timeLeft == 1 ? " &4Second" : " &4Seconds") + " Left!";             
+        p.SendCpeMessage(CpeMessageType.BottomRight1, timerStatus);
+        if (timeLeft == 60 || (timeLeft <= 30 && timeLeft % 10 == 0) || (timeLeft <= 10))
+        {
+            TimeSpan timeSpan = DateTime.Now - lastTimerCpeMsgTime;
+            Map.Message("Seconds since last cpe message: " + timeSpan.TotalSeconds.ToString());
+            if (timeLeft != 0 && timeSpan.TotalSeconds >= 1)
+            {               
+                p.SendCpeMessage(CpeMessageType.Normal, timeLeftMessage);
+                lastTimerCpeMsgTime = DateTime.Now;
+            }
+        }
     }
 
     private int GetNextRankRequirement(Group rank)
