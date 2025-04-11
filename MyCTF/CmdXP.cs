@@ -19,7 +19,7 @@ internal sealed class CmdXP : Command2
         {
             p.Message("&cError while retrieving your XP: no CTF game instance found.");
         }
-        instance.GetXP(p);
+        instance.ShowXP(p);
     }
 
     public override void Help(Player p)

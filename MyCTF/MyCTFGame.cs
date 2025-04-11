@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Uses MCGalaxy's built-in CTF plugin as the foundation
+// MCGalaxy can be found here: https://github.com/ClassiCube/MCGalaxy
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using MCGalaxy.Blocks.Physics;
@@ -356,7 +359,6 @@ public class MyCTFGame : RoundsGame
 
     protected override void SaveStats(Player p)
     {
-        p.Message("Saving data...");
         MyCtfData ctfData = TryGet(p);
         if (ctfData == null)
         {
@@ -791,11 +793,14 @@ public class MyCTFGame : RoundsGame
         if (playerTeam != null && opponentTeam != null && playerTeam != opponentTeam)
         {
             string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
-            opponent.HandleDeath(4, deathMessage);
-
-            MyCtfData ctfData = Get(p);
-            ctfData.Kills += 1;
-            AwardXP(p, Config.KillXPReward);
+            if (opponent.HandleDeath(4, deathMessage))
+            {
+                MyCtfData ctfData = Get(p);
+                ctfData.Kills += 1;
+                AwardXP(p, Config.KillXPReward);
+                return;
+            }
+            p.Message("&cThis player has just respawned!");
         }
     }
 
@@ -1045,8 +1050,8 @@ public class MyCTFGame : RoundsGame
     }
     public string GetFlagOf(Player p)
     {
-        MyCtfData ctfData = TryGet(p);
-        if (ctfData == null || TeamOf(p) == null || !ctfData.HasFlag)
+        MyCtfData ctfData = Get(p);
+        if (TeamOf(p) == null || !ctfData.HasFlag)
         {
             return "";
         }
@@ -1058,7 +1063,7 @@ public class MyCTFGame : RoundsGame
     public string GetGroupOf(Player p)
     {
         MyCtfTeam ctfTeam = TeamOf(p);
-        MyCtfData ctfData = TryGet(p);
+        MyCtfData ctfData = Get(p);
 
         if (p.Level != Map)
         {
@@ -1166,19 +1171,15 @@ public class MyCTFGame : RoundsGame
 
     private void AwardXP(Player p, int amount)
     {
-        MyCtfData ctfData = TryGet(p);
-        if (ctfData == null)
-        {
-            p.Message("&cAn error occurred while trying to award XP.");
-            return;
-        }
+        MyCtfData ctfData = Get(p);
         ctfData.XP += amount;
 
         string message = "&a+" + amount + " &aXP";
         p.Message(message);
         p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
 
-        CheckForPromotion(p, ctfData.XP);
+        SaveStats(p);
+        CheckForPromotion(p);
     }
 
     private void UpdateStatusHUD(Player p)
@@ -1192,8 +1193,8 @@ public class MyCTFGame : RoundsGame
             return;
         }
 
-        MyCtfData ctfData = TryGet(p);
-        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + Config.InfoColor + "XP: " + "&f" + (ctfData != null ? ctfData.XP.ToString() : "?") + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
+        MyCtfData ctfData = Get(p);
+        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "&a" + (ctfData != null ? ctfData.XP.ToString() : "?") + " XP" + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
         string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
         string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
       
@@ -1205,16 +1206,17 @@ public class MyCTFGame : RoundsGame
 
     private int GetNextRankRequirement(Group rank)
     {
-        if (rank.Name == "Banned")
+        if (rank.Name == "Unskilled")
         {
-            return 0;
+            return 100;
         }
         Group previousRank = GetPreviousOrNextRank(rank, true);
-        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.5) + 100;        
+        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.4);        
     }
 
     private Group GetPreviousOrNextRank(Group rank, bool previous)
-    {   if (rank.Name == "Banned")
+    {   
+        if (rank.Name == "Banned")
         {
             return null;
         }
@@ -1238,35 +1240,58 @@ public class MyCTFGame : RoundsGame
         return null;
     }
 
-    private void CheckForPromotion(Player p, int xp)
+    private bool HasMaxRank(Player p)
     {
-        int requirement = GetNextRankRequirement(p.group);
-        if (xp >= requirement)
+        Group rank = p.group;
+        if (rank.Name == "Flagmaster" || rank.Name == "Moderator" || rank.Name == "Developer")
         {
-            Group nextRank = GetPreviousOrNextRank(p.group, false);
-            p.group = nextRank;
-            Map.Message(p.ColoredName + Config.InfoColor + " has reached the rank " + nextRank.ColoredName + Config.InfoColor + "!");
-            p.SendCpeMessage(CpeMessageType.Announcement, Config.InfoColor + "You are now ranked " + nextRank.ColoredName + Config.InfoColor + "!");
-        }
+            return true;
+        }      
+        return false;
     }
 
-    public void GetXP(Player p)
+    public void ShowXP(Player p)
     {
-        MyCtfData ctfData = TryGet(p);
+        MyCtfData ctfData = Get(p);
         if (ctfData == null)
         {
-            p.Message("&cCould not retrieve your XP.");
+            p.Message("&cCould not retrieve your XP. Is CTF running?");
             return;
         }
         Group rank = p.group;
         int xp = ctfData.XP;
-        if (rank.Name == "Flagmaster" || rank.Name == "Moderator" || rank.Name == "Developer")
+        if (HasMaxRank(p))
         {
-            p.Message(Config.InfoColor + "You have " + "&a" + xp.ToString() + " XP" + Config.InfoColor + " and you cannot rank up any further.");
+            p.Message(Config.InfoColor + "You have " + "&a" + xp.ToString() + " XP" + Config.InfoColor + " and you cannot rank up any further!");
             return;
         }  
         int required = GetNextRankRequirement(rank);
         Group nextRank = GetPreviousOrNextRank(rank, false);
         p.Message(Config.InfoColor + "You have " + "&a" + xp.ToString() + " XP" + Config.InfoColor + " and need " + "&a" + (required - xp).ToString() + " XP" + Config.InfoColor + " more to rank up to " + nextRank.ColoredName + Config.InfoColor + "!");
+    }
+
+    private void CheckForPromotion(Player p)
+    {
+        if (HasMaxRank(p))
+        {
+            return;
+        }
+        Group rank = p.group;
+        MyCtfData ctfData = Get(p);
+        int xp = ctfData.XP;
+        int requirement = GetNextRankRequirement(rank);
+        if (xp >= requirement)
+        {
+            Group nextRank = GetPreviousOrNextRank(rank, false);
+            Command.Find("setrank").Use(Player.Console, p.truename + " " + nextRank.Name);
+            MyCtfTeam team = TeamOf(p);
+            if (team != null)
+            {
+                p.Message("Resetting your color to " + team.Color);
+                p.UpdateColor(team.Color);
+            }
+            Map.Message(p.ColoredName + Config.InfoColor + " has reached the rank " + nextRank.ColoredName + Config.InfoColor + "!");
+            p.SendCpeMessage(CpeMessageType.Announcement, Config.InfoColor + "You are now ranked " + nextRank.ColoredName + Config.InfoColor + "!");
+        }
     }
 }
