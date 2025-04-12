@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 internal sealed class CmdXP : Command2
 {

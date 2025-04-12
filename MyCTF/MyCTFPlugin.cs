@@ -3,8 +3,9 @@ using MCGalaxy.DB;
 using MCGalaxy.Events;
 using MCGalaxy.Events.ServerEvents;
 using System.Collections.Generic;
+using MCGalaxy;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 public sealed class MyCTFPlugin : Plugin
 {

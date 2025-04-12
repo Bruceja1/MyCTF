@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using MCGalaxy;
 using MCGalaxy.Blocks.Physics;
 using MCGalaxy.Commands.Fun;
 using MCGalaxy.Events;
@@ -24,10 +25,11 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Xml.Linq;
 using MCGalaxy.Commands;
 using MyCTF;
+using MyCTF.Events;
 using System.Linq;
 using MCGalaxy.Commands.World;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 public class MyCTFGame : RoundsGame
 {
@@ -67,9 +69,6 @@ public class MyCTFGame : RoundsGame
 
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
     private MyCTFTimer timer = new MyCTFTimer();
-    // This variable makes sure that the timer announcements at 60s, 30s, 20s, etc do not appear
-    // multiple times a second each.
-    private DateTime lastTimerCpeMsgTime = DateTime.Now;
     public override RoundsGameConfig GetConfig()
     {
         return Config;
@@ -581,7 +580,7 @@ public class MyCTFGame : RoundsGame
                 }              
             }
             
-            while (Running && RoundInProgress && !HasSomeoneWon() && !EmptyTeam())
+            while (Running && RoundInProgress && !HasSomeoneWon() && !EmptyTeam() && !timer.timeout)
             {
                 Tick();
                 Thread.Sleep(Config.CollisionsCheckInterval);
@@ -612,7 +611,9 @@ public class MyCTFGame : RoundsGame
                 continue;
             }
             UpdateStatusHUD(player);
+            UpdateTimerHUD(player);
             UpdateTabList(player);
+
             MyCtfTeam ctfTeam = TeamOf(player);
             MyCtfData ctfData = Get(player);
             if (ctfData.HasFlag)
@@ -647,8 +648,7 @@ public class MyCTFGame : RoundsGame
                     ctfData2.TagCooldown = false;
                 }
             }
-            //UpdateTabList(player);
-        }      
+        }
     }
 
     private void ResetPlayerFlag(Player p, MyCtfData data)
@@ -1204,22 +1204,24 @@ public class MyCTFGame : RoundsGame
         string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "&a" + (ctfData != null ? ctfData.XP.ToString() : "?") + " XP" + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
         string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
         string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
-        string timerStatus = Config.InfoColor + "Time left: " + "&f" + timer.Display();
-        //Map.Message("Sending HUD to player " + p.name);
+      
         p.SendCpeMessage(CpeMessageType.Status1, blueStatus);
         p.SendCpeMessage(CpeMessageType.Status2, redStatus);
-        p.SendCpeMessage(CpeMessageType.Status3, mapStatus);
+        p.SendCpeMessage(CpeMessageType.Status3, mapStatus);      
+    }
+
+    private void UpdateTimerHUD(Player p)
+    {
+        string timerStatus = Config.InfoColor + "Time left: " + "&f" + timer.Display();
         int timeLeft = timer.GetSecondsLeft();
-        string timeLeftMessage = "&f" + timeLeft + (timeLeft == 1 ? " &4Second" : " &4Seconds") + " Left!";             
+        string timeLeftMessage = "&f" + timeLeft + (timeLeft == 1 ? " &4Second" : " &4Seconds") + " Left!";
         p.SendCpeMessage(CpeMessageType.BottomRight1, timerStatus);
-        if (timeLeft == 60 || (timeLeft <= 30 && timeLeft % 10 == 0) || (timeLeft <= 10))
+        if (timeLeft == 60 || (timeLeft <= 30 && timeLeft % 10 == 0) || timeLeft <= 10)
         {
-            TimeSpan timeSpan = DateTime.Now - lastTimerCpeMsgTime;
-            Map.Message("Seconds since last cpe message: " + timeSpan.TotalSeconds.ToString());
-            if (timeLeft != 0 && timeSpan.TotalSeconds >= 1)
-            {               
+            if (timeLeft != 0 && timer.secondHasPassed)
+            {
+                p.SendCpeMessage(CpeMessageType.Announcement, timeLeftMessage);
                 p.SendCpeMessage(CpeMessageType.Normal, timeLeftMessage);
-                lastTimerCpeMsgTime = DateTime.Now;
             }
         }
     }

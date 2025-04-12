@@ -1,6 +1,6 @@
 ﻿using MCGalaxy.Maths;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 internal sealed class MyCtfData
 {

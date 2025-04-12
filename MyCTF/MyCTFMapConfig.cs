@@ -1,8 +1,9 @@
 ﻿using MCGalaxy.Config;
 using MCGalaxy.Games;
 using MCGalaxy.Maths;
+using MCGalaxy;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 public sealed class MyCTFMapConfig : RoundsGameMapConfig
 {

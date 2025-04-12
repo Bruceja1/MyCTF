@@ -1,7 +1,7 @@
 ﻿using MCGalaxy.Config;
 using MCGalaxy.Games;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 public sealed class MyCTFConfig : RoundsGameConfig
 {

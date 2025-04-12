@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MyCTFDebug")]
+[assembly: AssemblyTitle("CmdMcDebug")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MyCTFDebug")]
+[assembly: AssemblyProduct("CmdMcDebug")]
 [assembly: AssemblyCopyright("Copyright ©  2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("1889738f-e397-4cb1-ba73-076a264568ba")]
+[assembly: Guid("1b135164-edd5-4a71-af5a-3f4216166d0b")]
 
 // Version information for an assembly consists of the following four values:
 //

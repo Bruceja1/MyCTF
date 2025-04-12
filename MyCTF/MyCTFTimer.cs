@@ -12,7 +12,8 @@ public class MyCTFTimer
     private int seconds;
     private int minutes;
     private int lengthInSeconds;
-    private bool timeout;
+    public bool timeout;
+    public bool secondHasPassed;
     DateTime dateTime = DateTime.Now;
     TimeSpan timeSpan;
 
@@ -41,8 +42,10 @@ public class MyCTFTimer
             timeSpan = DateTime.Now - dateTime;
             if (timeSpan.TotalSeconds < 1)
             {
+                secondHasPassed = false;
                 return;
             }
+            secondHasPassed = true;
             lengthInSeconds--;
             if (seconds > 0)
             {

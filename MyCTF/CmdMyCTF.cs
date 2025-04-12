@@ -2,8 +2,9 @@
 using MCGalaxy.Commands.Fun;
 using MCGalaxy.Games;
 using MCGalaxy.Maths;
+using MCGalaxy;
 
-namespace MCGalaxy.Modules.Games.MyCTF;
+namespace MyCTF;
 
 internal sealed class CmdMyCTF : RoundsGameCmd
 {

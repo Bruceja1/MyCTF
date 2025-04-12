@@ -2,7 +2,7 @@
 using MCGalaxy;
 using MCGalaxy.Events;
 
-namespace MyCTF;
+namespace MyCTF.Events;
 
 public sealed class OnWeaponContactEvent : IEvent<OnWeaponContact>
 {

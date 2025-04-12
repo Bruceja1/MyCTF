@@ -1,6 +1,8 @@
 ﻿using MCGalaxy.DB;
+using MCGalaxy;
+using MCGalaxy.Commands;
 
-namespace MCGalaxy.Commands.CPE;
+namespace MyCTF.Events;
 
 public sealed class CmdMcDebug : Command2
 {

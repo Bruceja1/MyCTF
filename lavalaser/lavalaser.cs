@@ -11,7 +11,7 @@ using MCGalaxy.Levels.IO;
 using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
-using MyCTF;
+using MyCTF.Events;
 using System.Diagnostics;
 
 namespace lavalaser
