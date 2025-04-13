@@ -12,12 +12,12 @@ public sealed class MyCTFConfig : RoundsGameConfig
     public int CollisionsCheckInterval = 150;
 
     [ConfigInt("countdown-timer", "Game properties", 5)]
-    public int CountdownTimer = 5;
+    public int CountdownTimer = 300;
 
     [ConfigString("info-color", "Game properties", "&6")]
     public string InfoColor = "&6";
 
-    [ConfigString("chat-color", "Game properties", "&6")]
+    [ConfigString("chat-color", "Game properties", "&f")]
     public string ChatColor = "&7";
 
     [ConfigFloat("flag-bot-scale", "Game properties", (float)0.8)]

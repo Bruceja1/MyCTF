@@ -261,6 +261,7 @@ public class MyCTFGame : RoundsGame
         Get(p).HasFlag = false;
         team.Members.Add(p);
         p.UpdateColor(team.Color);
+        UpdateTabList(p);
         Map.Message(p.ColoredName + Config.InfoColor + " joined the " + team.ColoredName + Config.InfoColor + " team");
         p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");
         //UpdateTabList(p);
@@ -275,20 +276,11 @@ public class MyCTFGame : RoundsGame
     private void LeaveTeam(Player p)
     {
         MyCtfTeam team = TeamOf(p);
-        if (team == null)
-        {
-            p.Message(Config.InfoColor + "You are not on a team!");
-            return;
-        }
-        if (RoundInProgress)
-        {
-            p.Message(Config.InfoColor + "You cannot leave your team during a match!");
-            return;
-        }
-        RemoveFromTeam(p);      
-        Map.Message(p.ColoredName + Config.InfoColor + " left the " + team.ColoredName + Config.InfoColor + " team");
-        p.Message(Config.InfoColor + "You have left the " + team.ColoredName + Config.InfoColor + " team.");
-             
+        RemoveFromTeam(p); 
+        ResetPlayerColor(p);
+        UpdateTabList(p);
+        Map.Message(p.ColoredName + Config.InfoColor + " has left the " + team.ColoredName + Config.InfoColor + " team");
+        p.Message(Config.InfoColor + "You have left the " + team.ColoredName + Config.InfoColor + " team.");             
     }
 
     private void RemoveFromTeam(Player p)
@@ -987,20 +979,45 @@ public class MyCTFGame : RoundsGame
     // TODO: move message validation to CmdMyCTF
     public void HandleJoinCmd(Player p, string[] message)
     {
+        if (!Running || message.Length == 1)
+        {
+            return;
+        }
+        if (TeamOf(p) != null)
+        { 
+            p.Message("&cYou are already on a team!");
+            return;
+        }
         if (message[1].CaselessEq("Blue"))
         {
             JoinTeam(p, Blue);
+            return;
         }
-
         else if (message[1].CaselessEq("Red"))
         {
             JoinTeam(p, Red);
+            return;
         }
-
         else
         {
-            p.Message("&bPlease enter a valid team name. Usage: &a/MyCTF &ejoin blue/red");
+            p.Message("&cPlease enter a valid team name. Usage: &a/mc join blue &cor &a/mc join red");
+            return;
         }
+    }
+
+    public void HandleLeaveCmd(Player p)
+    {
+        if (TeamOf(p) == null)
+        {
+            p.Message("&cYou are not on a team!");
+            return;
+        }
+        if (RoundInProgress)
+        {
+            p.Message("&cCannot leave your team when a round is in progress!");
+            return;
+        }
+        LeaveTeam(p);
     }
 
     private bool EmptyTeam()
@@ -1249,7 +1266,7 @@ public class MyCTFGame : RoundsGame
             return 100;
         }
         Group previousRank = GetPreviousOrNextRank(rank, true);
-        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.4);        
+        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.42) + 100;        
     }
 
     private Group GetPreviousOrNextRank(Group rank, bool previous)
@@ -1325,7 +1342,6 @@ public class MyCTFGame : RoundsGame
             MyCtfTeam team = TeamOf(p);
             if (team != null)
             {
-                p.Message("Resetting your color to " + team.Color);
                 p.UpdateColor(team.Color);
             }
             Map.Message(p.ColoredName + Config.InfoColor + " has reached the rank " + nextRank.ColoredName + Config.InfoColor + "!");
@@ -1371,9 +1387,9 @@ public class MyCTFGame : RoundsGame
     private void DisplayRoundStats(Player p)
     {
         string name = p.truename;
-        p.Message(Config.InfoColor + "Your stats for this round:");
-        p.Message("&f" + roundStats[name].Kills.ToString() + Config.InfoColor + " kills.");
-        p.Message("&f" + roundStats[name].Captures.ToString() + Config.InfoColor + " captures.");
+        int kills = roundStats[name].Kills;
+        int captures = roundStats[name].Captures;
+        p.Message(Config.InfoColor + "You got " + "&f" + kills.ToString() + Config.InfoColor + (kills == 1 ? " Kill" : " Kills") + " and " + "&f" + captures.ToString() + Config.InfoColor + (captures == 1 ? " Capture" : " Captures") + " this round.");
         p.Message(Config.InfoColor + "You earned " + "&a" + roundStats[name].XP.ToString() + " XP" + Config.InfoColor + " this round.");
     }
 

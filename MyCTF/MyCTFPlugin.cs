@@ -16,6 +16,7 @@ public sealed class MyCTFPlugin : Plugin
     DBTopStat killStat = new DBTopStat("Kills", "Most kills", "MyCTF", "Kills", TopStat.FormatInteger);
     DBTopStat captureStat = new DBTopStat("Captures", "Most captures", "MyCTF", "Captures", TopStat.FormatInteger);
     DBTopStat xpStat = new DBTopStat("XP", "Most XP", "MyCTF", "XP", TopStat.FormatInteger);
+    DBTopStat killstreakStat = new DBTopStat("Killstreak", "Highest killstreaks", "MyCTF", "Killstreak", TopStat.FormatInteger);
 
     public override void Load(bool startup)
     {
@@ -24,6 +25,7 @@ public sealed class MyCTFPlugin : Plugin
         TopStat.Register(killStat);
         TopStat.Register(captureStat);
         TopStat.Register(xpStat);
+        TopStat.Register(killstreakStat);
         MyCTFGame instance = MyCTFGame.Instance;
         instance.Config.Path = "properties/myctf.properties";
         instance.ReloadConfig();
@@ -46,5 +48,6 @@ public sealed class MyCTFPlugin : Plugin
         TopStat.Unregister(killStat);
         TopStat.Unregister(captureStat);
         TopStat.Unregister(xpStat);
+        TopStat.Unregister(killstreakStat);
     }
 }

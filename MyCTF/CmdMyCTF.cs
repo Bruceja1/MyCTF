@@ -33,8 +33,11 @@ internal sealed class CmdMyCTF : RoundsGameCmd
         }
         else if (message.CaselessStarts("join"))
         {
-            p.Message("Join command used");
             HandleJoin(p, message);
+        }
+        else if (message.CaselessStarts("leave"))
+        {
+            HandleLeave(p);
         }
         else if (CheckExtraPerm(p, data, 1))
         {
@@ -153,6 +156,12 @@ internal sealed class CmdMyCTF : RoundsGameCmd
     {
         MyCTFGame instance = MyCTFGame.Instance;
         instance.HandleJoinCmd(p, message.SplitSpaces());
+    }
+
+    private void HandleLeave(Player p)
+    {
+        MyCTFGame instance = MyCTFGame.Instance;
+        instance.HandleLeaveCmd(p);
     }
 
     public override void Help(Player p, string message)
