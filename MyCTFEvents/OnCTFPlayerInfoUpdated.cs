@@ -1,4 +1,5 @@
-﻿using MCGalaxy;
+﻿// Event for the tablist
+using MCGalaxy;
 using System;
 
 namespace MyCTF.Events;

@@ -1,4 +1,5 @@
-﻿using MCGalaxy.Commands;
+﻿using System;
+using MCGalaxy.Commands;
 using MCGalaxy.Commands.Fun;
 using MCGalaxy.Games;
 using MCGalaxy.Maths;
@@ -102,6 +103,12 @@ internal sealed class CmdMyCTF : RoundsGameCmd
             p.Message("Set Z line divider to {0}.", cTFMapConfig.ZDivider);
             SaveMapConfig(p, cTFMapConfig);
         }
+        else if (a.CaselessEq("time") && args.Length >= 3 && Int32.TryParse(args[2], out int roundTime))
+        {
+            cTFMapConfig.Time = roundTime;
+            p.Message("Set round time to {0} minutes.", cTFMapConfig.Time);
+            SaveMapConfig(p, cTFMapConfig);
+        }
         else
         {
             Help(p, "set");
@@ -159,6 +166,8 @@ internal sealed class CmdMyCTF : RoundsGameCmd
             p.Message("&T/MyCTF set divider");
             p.Message("&HSets the divider line to your current Z position.");
             p.Message("   &HRed team tags blue team when the Z position is less than the divider, blue teams tags when Z position is more.");
+            p.Message("&T/MyCTF set time <minutes>");
+            p.Message("&HSets the specified round time for the map.");
         }
         else
         {

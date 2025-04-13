@@ -29,6 +29,9 @@ public sealed class MyCTFConfig : RoundsGameConfig
     [ConfigInt("max-captures", "Game properties", 5)]
     public int MaxCaptures = 5;
 
+    [ConfigInt("round-stats-summary-count", "Game properties", 3)]
+    public int RoundStatsSummaryCount = 3;
+
     [ConfigInt("kill-xp-reward", "XP Rewards", 2)]
     public int KillXPReward = 2;
 

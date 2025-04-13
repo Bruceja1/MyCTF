@@ -69,6 +69,7 @@ public class MyCTFGame : RoundsGame
 
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
     private MyCTFTimer timer = new MyCTFTimer();
+    private Dictionary<string, MyCtfStats> roundStats = new Dictionary<string, MyCtfStats>();
     public override RoundsGameConfig GetConfig()
     {
         return Config;
@@ -212,7 +213,7 @@ public class MyCTFGame : RoundsGame
     {
         bool announce = false;
         HandleSentMap(p, Map, Map);
-        HandleJoinedLevel(p, Map, Map, ref announce);
+        HandleJoinedLevel(p, Map, Map, ref announce);       
     }
 
     public override void PlayerLeftGame(Player p)
@@ -547,6 +548,10 @@ public class MyCTFGame : RoundsGame
     {
         if (level == Map)
         {
+            if (!roundStats.ContainsKey(p.truename))
+            {
+                roundStats.Add(p.truename, new MyCtfStats());
+            }
             OutputMapSummary(p, Map.name, Map.Config);
 
             // Randomly assigns team regardless if the countdown is still in progress
@@ -567,7 +572,8 @@ public class MyCTFGame : RoundsGame
     {
         if (Running)
         {
-            timer.Set(1);
+            roundStats.Clear();
+            timer.Set(cfg.Time);
             RoundInProgress = true;
             Player[] items = PlayerInfo.Online.Items;
             Player[] array = items;
@@ -720,15 +726,17 @@ public class MyCTFGame : RoundsGame
             else
             {
                 Map.Message(Config.InfoColor + "The round ended in a tie!");
-            }
+            }           
             ResetFlagsState();
-            ResetTeams();           
+            ResetTeams();
+            DisplayBestRoundStats();
             foreach (Player player in PlayerInfo.Online.Items)
             {
+                DisplayRoundStats(player);                
                 ResetPlayerColor(player);
                 UpdateStatusHUD(player);
                 UpdateTabList(player);
-            }
+            }           
             Map.Message("Starting next round!");
         }
     }
@@ -766,8 +774,10 @@ public class MyCTFGame : RoundsGame
             ctfData.Captures++;
             team.Captures++;
             MyCtfTeam ctfTeam = Opposing(team);
-            ctfTeam.RespawnFlag(Map);         
+            ctfTeam.RespawnFlag(Map);    
+            
             AwardXP(p, Config.CaptureXPReward);
+            IncreaseRoundStat(p, "Captures");
         }
         else
         {
@@ -805,6 +815,8 @@ public class MyCTFGame : RoundsGame
                 MyCtfData ctfData = Get(p);
                 ctfData.Kills += 1;
                 AwardXP(p, Config.KillXPReward);
+
+                IncreaseRoundStat(p, "Kills");
                 return;
             }
             p.Message("&cThis player has just respawned!");
@@ -1187,6 +1199,7 @@ public class MyCTFGame : RoundsGame
 
         SaveStats(p);
         CheckForPromotion(p);
+        IncreaseRoundStat(p, "XP", amount);
     }
 
     private void UpdateStatusHUD(Player p)
@@ -1316,4 +1329,72 @@ public class MyCTFGame : RoundsGame
             p.SendCpeMessage(CpeMessageType.Announcement, Config.InfoColor + "You are now ranked " + nextRank.ColoredName + Config.InfoColor + "!");
         }
     }
-}
+
+    private void IncreaseRoundStat(Player p, string stat, int amount = 1)
+    {
+        string name = p.truename;
+        MyCtfStats stats = roundStats[name];
+        if (stat.CaselessEq("Kills"))
+        {
+            stats.Kills += amount;
+        }
+        else if (stat.CaselessEq("Captures"))
+        {
+            stats.Captures += amount;
+        }
+        else if (stat.CaselessEq("XP"))
+        {
+            stats.XP += amount;      
+        }
+        else
+        {
+            p.Message("&cAn error occurred while updating your round stats. Tell Bruceja he is a bad coder.");
+        }
+        roundStats[name] = stats;
+    }
+
+    private void DisplayRoundStats(Player p)
+    {
+        string name = p.truename;
+        p.Message(Config.InfoColor + "Your stats for this round:");
+        p.Message("&f" + roundStats[name].Kills.ToString() + Config.InfoColor + " kills.");
+        p.Message("&f" + roundStats[name].Captures.ToString() + Config.InfoColor + " captures.");
+        p.Message(Config.InfoColor + "You earned " + "&a" + roundStats[name].XP.ToString() + " XP" + Config.InfoColor + " this round.");
+    }
+
+    private void DisplayBestRoundStats()
+    {
+        int displayCount = Config.RoundStatsSummaryCount;
+        if (roundStats.Keys.Count < displayCount)
+        {
+            displayCount = roundStats.Keys.Count;
+        }
+
+        List<Player> players = new List<Player>();
+        foreach (string name in roundStats.Keys)
+        {
+            Player player = PlayerInfo.FindExact(name);
+            players.Add(player);
+        }
+        
+        players.Sort((a, b) => roundStats[a.truename].Kills.CompareTo(roundStats[b.truename].Kills));
+        players.Reverse();
+        Map.Message(Config.InfoColor + "Most Kills:");
+        for (int i = 0; i < displayCount; i++)
+        {
+            int placement = i + 1;
+            Player player = players[i];
+            Map.Message(Config.InfoColor + placement.ToString() + ". " + player.ColoredName + Config.InfoColor + " - " + "&f" + roundStats[player.truename].Kills.ToString() + Config.InfoColor + ".");
+        }
+
+        players.Sort((a, b) => roundStats[a.truename].Captures.CompareTo(roundStats[b.truename].Captures));
+        players.Reverse();
+        Map.Message(Config.InfoColor + "Most Captures:");
+        for (int i = 0; i < displayCount; i++)
+        {
+            int placement = i + 1;
+            Player player = players[i];
+            Map.Message(Config.InfoColor + placement.ToString() + ". " + player.ColoredName + Config.InfoColor + " - " + "&f" + roundStats[player.truename].Captures.ToString() + Config.InfoColor + ".");
+        }
+    }
+}   
