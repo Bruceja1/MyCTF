@@ -11,6 +11,7 @@ internal sealed class MyCtfData
 
     public int Points;
     public int XP;
+    public int Killstreak;
 
     public bool HasFlag;
 

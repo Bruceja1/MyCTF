@@ -40,6 +40,7 @@ public class MyCTFGame : RoundsGame
         public int Tags;
         public int Kills;
         public int XP;
+        public int Killstreak;
     }
     
     private MyCTFMapConfig cfg = new MyCTFMapConfig();
@@ -54,7 +55,7 @@ public class MyCTFGame : RoundsGame
 
     private const string myctfExtrasKey = "MCG_MYCTF_DATA";
 
-    private static ColumnDesc[] myctfTable = new ColumnDesc[7]
+    private static ColumnDesc[] myctfTable = new ColumnDesc[8]
     {
         new ColumnDesc("ID", ColumnType.Integer, 0, autoInc: true, priKey: true, notNull: true),
         new ColumnDesc("Name", ColumnType.VarChar, 20),
@@ -63,6 +64,7 @@ public class MyCTFGame : RoundsGame
         new ColumnDesc("tags", ColumnType.UInt24),
         new ColumnDesc("Kills", ColumnType.UInt24),
         new ColumnDesc("XP", ColumnType.UInt24),
+        new ColumnDesc("Killstreak", ColumnType.UInt24),
     };
 
     public override string GameName => "MyCTF";
@@ -95,6 +97,7 @@ public class MyCTFGame : RoundsGame
         ctfData.Tags = ctfStats.Tags;
         ctfData.Kills = ctfStats.Kills;
         ctfData.XP = ctfStats.XP;
+        ctfData.Killstreak = ctfStats.Killstreak;
         p.Extras["MCG_MYCTF_DATA"] = ctfData; // TODO: Why not p.Extras[myctfExtrasKey] = ctfData; ?
         return ctfData;
     }
@@ -152,6 +155,7 @@ public class MyCTFGame : RoundsGame
         p.Message($"Kills: {playerData.Kills.ToString()}");
         p.Message($"Points: {playerData.Points.ToString()}");
         p.Message($"XP: {playerData.XP.ToString()}");
+        p.Message($"Highest killstreak: {playerData.Killstreak.ToString()}");
         p.Message($"HasFlag: {playerData.HasFlag.ToString()}");
         p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
         p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
@@ -348,6 +352,7 @@ public class MyCTFGame : RoundsGame
         result.Tags = record.GetInt("Tags");
         result.Kills = record.GetInt("Kills");
         result.XP = record.GetInt("XP");
+        result.Killstreak = record.GetInt("Killstreak");
         return result;
     }
 
@@ -368,12 +373,13 @@ public class MyCTFGame : RoundsGame
         {
             return;
         }
-        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0 || ctfData.XP != 0)
+
+        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0 || ctfData.XP != 0 || ctfData.Killstreak != 0)
         {
-            object[] args = new object[6] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, ctfData.XP, p.name };
-            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3, XP=@4", "WHERE Name=@5", args) == 0)
+            object[] args = new object[7] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, ctfData.XP, ctfData.Killstreak, p.name };
+            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3, XP=@4, Killstreak=@5", "WHERE Name=@6", args) == 0)
             {
-                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, XP, Name", args);
+                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, XP, Killstreak, Name", args);
             }
         }
     }
@@ -552,6 +558,7 @@ public class MyCTFGame : RoundsGame
             {
                 roundStats.Add(p.truename, new MyCtfStats());
             }
+            ResetKillstreak(p);
             OutputMapSummary(p, Map.name, Map.Config);
 
             // Randomly assigns team regardless if the countdown is still in progress
@@ -771,13 +778,12 @@ public class MyCTFGame : RoundsGame
             ctfData.HasFlag = false;
             ResetPlayerFlag(p, ctfData);
             //ctfData.Points += cfg.Capture_PointsGained;
-            ctfData.Captures++;
             team.Captures++;
             MyCtfTeam ctfTeam = Opposing(team);
-            ctfTeam.RespawnFlag(Map);    
-            
-            AwardXP(p, Config.CaptureXPReward);
-            IncreaseRoundStat(p, "Captures");
+            ctfTeam.RespawnFlag(Map);
+
+            IncreaseStat(p, "Captures");
+            AwardXP(p, Config.CaptureXPReward);           
         }
         else
         {
@@ -810,13 +816,13 @@ public class MyCTFGame : RoundsGame
         if (playerTeam != null && opponentTeam != null && playerTeam != opponentTeam)
         {
             string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
-            if (opponent.HandleDeath(4, deathMessage))
+            if (opponent.HandleDeath(4, GetKillstreakMessage(p)))
             {
-                MyCtfData ctfData = Get(p);
-                ctfData.Kills += 1;
+                Map.Message(deathMessage);
+                IncreaseStat(p, "Kills");
+                IncreaseStat(p, "Killstreak");
                 AwardXP(p, Config.KillXPReward);
-
-                IncreaseRoundStat(p, "Kills");
+                ResetKillstreak(opponent);
                 return;
             }
             p.Message("&cThis player has just respawned!");
@@ -1190,16 +1196,13 @@ public class MyCTFGame : RoundsGame
 
     private void AwardXP(Player p, int amount)
     {
-        MyCtfData ctfData = Get(p);
-        ctfData.XP += amount;
-
+        IncreaseStat(p, "XP", amount);
         string message = "&a+" + amount + " &aXP";
         p.Message(message);
         p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
 
         SaveStats(p);
-        CheckForPromotion(p);
-        IncreaseRoundStat(p, "XP", amount);
+        CheckForPromotion(p);        
     }
 
     private void UpdateStatusHUD(Player p)
@@ -1330,21 +1333,33 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    private void IncreaseRoundStat(Player p, string stat, int amount = 1)
+    private void IncreaseStat(Player p, string stat, int amount = 1)
     {
         string name = p.truename;
         MyCtfStats stats = roundStats[name];
+        MyCtfData ctfData = Get(p);
         if (stat.CaselessEq("Kills"))
         {
             stats.Kills += amount;
+            ctfData.Kills += amount;
         }
         else if (stat.CaselessEq("Captures"))
         {
             stats.Captures += amount;
+            ctfData.Captures += amount;
         }
         else if (stat.CaselessEq("XP"))
         {
-            stats.XP += amount;      
+            stats.XP += amount;
+            ctfData.XP += amount;
+        }
+        else if (stat.CaselessEq("Killstreak"))
+        {
+            stats.Killstreak += amount;
+            if (stats.Killstreak > ctfData.Killstreak)
+            {
+                ctfData.Killstreak = stats.Killstreak;
+            }
         }
         else
         {
@@ -1396,5 +1411,39 @@ public class MyCTFGame : RoundsGame
             Player player = players[i];
             Map.Message(Config.InfoColor + placement.ToString() + ". " + player.ColoredName + Config.InfoColor + " - " + "&f" + roundStats[player.truename].Captures.ToString() + Config.InfoColor + ".");
         }
+    }
+
+    private string GetKillstreakMessage(Player p)
+    {
+        int killstreak = roundStats[p.truename].Killstreak;
+        // Need to increment here because the message gets sent before the stat is updated.
+        killstreak++;
+        string format = p.ColoredName + Config.InfoColor;
+
+        switch (killstreak)
+        {
+            case 1:
+                return "";  
+            case 2:
+                return format + " is awesome! - double kill!";
+            case 3:
+                return format + " is amazing! - triple kill!";
+            case 4:
+                return format + " is insane! - quadruple kill!";
+            case 5:
+                return format + " is OUTRAGEOUS! - quintuple kill!";
+            case 6:
+                return format + " is HOT! - sextuple kill!";
+            default:
+                return format + " is UNSTOPPABLE! - " + killstreak.ToString() + " killstreak!";
+        }
+    }
+
+    private void ResetKillstreak(Player p)
+    {
+        string name = p.truename;
+        MyCtfStats stats = roundStats[name];
+        stats.Killstreak = 0;
+        roundStats[name] = stats;
     }
 }   
