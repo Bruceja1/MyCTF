@@ -94,7 +94,7 @@ namespace lavalaser
 
             KillEnemy(p, laserBlockIndexes);
 
-            p.Extras[laserExtrasKey] = DateTime.Now;
+            p.Extras[laserExtrasKey] = DateTime.UtcNow;
 
             /*
             if (newBlock != Block.Air)
@@ -160,13 +160,13 @@ namespace lavalaser
         {
             if (!p.Extras.Contains(laserExtrasKey))
             {
-                p.Extras[laserExtrasKey] = DateTime.Now;
+                p.Extras[laserExtrasKey] = DateTime.UtcNow;
                 return false;
             }
 
             // Source: https://www.bytehide.com/blog/datetime-now-vs-datetime-utcnow-csharp
             DateTime startTime = (DateTime)p.Extras[laserExtrasKey];
-            DateTime endTime = DateTime.Now;
+            DateTime endTime = DateTime.UtcNow;
             TimeSpan elapsedTime = endTime - startTime;
 
             //p.Message(elapsedTime.TotalSeconds.ToString());

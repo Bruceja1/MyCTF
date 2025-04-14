@@ -829,8 +829,8 @@ public class MyCTFGame : RoundsGame
     // TODO: use built-in CpeMessage announce type
     protected void Countdown()
     {
-        DateTime startTime = DateTime.Now;
-        DateTime now = DateTime.Now;
+        DateTime startTime = DateTime.UtcNow;
+        DateTime now = DateTime.UtcNow;
         TimeSpan elapsedTime = now - startTime;
 
         string message = "";
@@ -856,7 +856,7 @@ public class MyCTFGame : RoundsGame
                 Command.Find("Announce").Use(Player.Console, message);
             }
 
-            now = DateTime.Now;
+            now = DateTime.UtcNow;
             elapsedTime = now - startTime;
         }
 
@@ -1302,7 +1302,8 @@ public class MyCTFGame : RoundsGame
 
     private bool HasMaxRank(Player p)
     {
-        Group rank = p.group;
+        //Group rank = p.group;
+        Group rank = Group.GroupIn(p.truename);
         if (rank.Name == "Flagmaster" || rank.Name == "Moderator" || rank.Name == "Developer")
         {
             return true;
@@ -1318,7 +1319,8 @@ public class MyCTFGame : RoundsGame
             p.Message("&cCould not retrieve your XP. Is CTF running?");
             return;
         }
-        Group rank = p.group;
+        //Group rank = p.group;
+        Group rank = Group.GroupIn(p.truename);
         int xp = ctfData.XP;
         if (HasMaxRank(p))
         {
@@ -1336,7 +1338,8 @@ public class MyCTFGame : RoundsGame
         {
             return;
         }
-        Group rank = p.group;
+        //Group rank = p.group;
+        Group rank = Group.GroupIn(p.truename);
         MyCtfData ctfData = Get(p);
         int xp = ctfData.XP;
         int requirement = GetNextRankRequirement(rank);
