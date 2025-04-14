@@ -804,12 +804,17 @@ public class MyCTFGame : RoundsGame
     {
         MyCtfTeam playerTeam = TeamOf(p);
         MyCtfTeam opponentTeam = TeamOf(opponent);
-
+        Vec3S32 opponentPos = opponent.Pos.FeetBlockCoords;
         if (playerTeam != null && opponentTeam != null && playerTeam != opponentTeam)
         {
+            if (opponentPos == opponentTeam.SpawnPos)
+            {
+                p.Message("&cSpawnkilling is not allowed!");
+                return;
+            }
             string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
             if (opponent.HandleDeath(4, GetKillstreakMessage(p)))
-            {
+            {              
                 Map.Message(deathMessage);
                 IncreaseStat(p, "Kills");
                 IncreaseStat(p, "Killstreak");
@@ -1014,7 +1019,7 @@ public class MyCTFGame : RoundsGame
         }
         if (RoundInProgress)
         {
-            p.Message("&cCannot leave your team when a round is in progress!");
+            p.Message("&cYou cannot leave your team during a round!");
             return;
         }
         LeaveTeam(p);
