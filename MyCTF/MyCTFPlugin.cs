@@ -4,6 +4,7 @@ using MCGalaxy.Events;
 using MCGalaxy.Events.ServerEvents;
 using System.Collections.Generic;
 using MCGalaxy;
+using System.Dynamic;
 
 namespace MyCTF;
 
@@ -31,6 +32,8 @@ public sealed class MyCTFPlugin : Plugin
         instance.ReloadConfig();
         instance.AutoStart();
         IEvent<OnConfigUpdated>.Register(instance.ReloadConfig, Priority.Low);
+        OnlineStat.Stats = MyCTFOnlineProfileStat.Stats;
+        OfflineStat.Stats = MyCTFOfflineProfileStat.Stats;
     }
 
     public override void Unload(bool shutdown)
@@ -49,5 +52,7 @@ public sealed class MyCTFPlugin : Plugin
         TopStat.Unregister(captureStat);
         TopStat.Unregister(xpStat);
         TopStat.Unregister(killstreakStat);
+        OnlineStat.Stats.Clear();
+        OfflineStat.Stats.Clear();
     }
 }

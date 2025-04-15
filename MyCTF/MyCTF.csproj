@@ -61,7 +61,10 @@
     <Compile Include="MyCtfData.cs" />
     <Compile Include="MyCTFGame.cs" />
     <Compile Include="MyCTFMapConfig.cs" />
+    <Compile Include="MyCTFOfflineProfileStat.cs" />
     <Compile Include="MyCTFPlugin.cs" />
+    <Compile Include="MyCTFOnlineProfileStat.cs" />
+    <Compile Include="MyCTFProfileStat.cs" />
     <Compile Include="MyCtfTeam.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MyCTFTimer.cs" />

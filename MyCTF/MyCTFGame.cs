@@ -28,6 +28,7 @@ using MyCTF;
 using MyCTF.Events;
 using System.Linq;
 using MCGalaxy.Commands.World;
+using MCGalaxy.Modules.Awards;
 
 namespace MyCTF;
 
@@ -1222,7 +1223,6 @@ public class MyCTFGame : RoundsGame
         string message = "&a+" + amount + " &aXP";
         p.Message(message);
         p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
-
         SaveStats(p);
         CheckForPromotion(p);        
     }
@@ -1469,5 +1469,39 @@ public class MyCTFGame : RoundsGame
         MyCtfStats stats = roundStats[name];
         stats.Killstreak = 0;
         roundStats[name] = stats;
+    }
+
+    // /whois info
+    public static void MyCTFLine(Player p, Player who)
+    {
+        MyCTFLine(p, PlayerDB.Match(who, who.truename));
+    }
+
+    public static void MyCTFLine(Player p, PlayerData who)
+    {
+        MyCtfData ctfData = GetOfflineStats(who);
+        p.Message("  &a{0} &aXP&S, &f{1} &SKills, &f{2} &SCaptures.", ctfData.XP, ctfData.Kills, ctfData.Captures);
+        p.Message("  &SHighest Killstreak: &f{0}", ctfData.Killstreak);
+    }
+
+    internal static MyCtfData GetOfflineStats(PlayerData pd)
+    {
+        // Can't use Get() here unfortunately, since Get() takes a Player object and not a PlayerData object.
+        // Afaik it is not possible to convert a PlayerData object into a Player object.
+        MyCtfStats ctfStats = LoadStats(pd.Name);
+        MyCtfData ctfData = new MyCtfData();
+        ctfData.Captures = ctfStats.Captures;
+        ctfData.Points = ctfStats.Points;
+        ctfData.Tags = ctfStats.Tags;
+        ctfData.Kills = ctfStats.Kills;
+        ctfData.XP = ctfStats.XP;
+        ctfData.Killstreak = ctfStats.Killstreak;
+        return ctfData;
+    }
+
+    internal static MyCtfData GetOfflineStats(Player p)
+    {
+        PlayerData pd = PlayerDB.FindData(p.truename);
+        return GetOfflineStats(pd);
     }
 }   
