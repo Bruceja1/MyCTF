@@ -5,8 +5,7 @@ using System.Linq;
 using MCGalaxy;
 using MCGalaxy.Config;
 using MCGalaxy.Events.EntityEvents;
-using MyCTF;
-using MyCTF.Events;
+//using MyCTF.Events;
 
 namespace MCGalaxy
 {

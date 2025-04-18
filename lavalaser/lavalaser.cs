@@ -11,8 +11,8 @@ using MCGalaxy.Levels.IO;
 using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
-using MyCTF.Events;
 using System.Diagnostics;
+//using MyCTF.Events;
 
 namespace lavalaser
 {
@@ -263,7 +263,6 @@ namespace lavalaser
         {
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
         }
-
     }
 }
 

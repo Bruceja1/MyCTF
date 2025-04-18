@@ -2,6 +2,6 @@
 using MCGalaxy;
 using System;
 
-namespace MyCTF.Events;
+namespace MCGalaxy;
 
 public delegate void OnCTFPlayerInfoUpdated(Player p, string flag, string group);

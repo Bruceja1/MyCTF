@@ -25,10 +25,13 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Xml.Linq;
 using MCGalaxy.Commands;
 using MyCTF;
-using MyCTF.Events;
+//using MyCTF.Events;
 using System.Linq;
 using MCGalaxy.Commands.World;
 using MCGalaxy.Modules.Awards;
+using System.Diagnostics.Eventing.Reader;
+using MCGalaxy.Modules.Relay;
+using MCGalaxy.Modules.Relay.Discord;
 
 namespace MyCTF;
 
@@ -421,8 +424,9 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map || !Get(p).TeamChatting)
         {
-            Chat.MessageChat(ChatScope.Level, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + Config.ChatColor + message, Map, null);
+            Chat.MessageChat(ChatScope.Global, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + Config.ChatColor + message, Map, null, true);
             p.cancelchat = true;
+            
             return;
         }
 
@@ -1366,11 +1370,13 @@ public class MyCTFGame : RoundsGame
         {
             stats.Kills += amount;
             ctfData.Kills += amount;
+            OnKillEvent.Call(p, ctfData.Kills, stats.Kills);
         }
         else if (stat.CaselessEq("Captures"))
         {
             stats.Captures += amount;
             ctfData.Captures += amount;
+            OnCaptureEvent.Call(p, ctfData.Captures, stats.Captures);
         }
         else if (stat.CaselessEq("XP"))
         {
@@ -1503,5 +1509,5 @@ public class MyCTFGame : RoundsGame
     {
         PlayerData pd = PlayerDB.FindData(p.truename);
         return GetOfflineStats(pd);
-    }
+    }  
 }   

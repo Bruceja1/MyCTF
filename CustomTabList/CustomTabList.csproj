@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CustomTabList</RootNamespace>
     <AssemblyName>CustomTabList</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -32,16 +32,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CustomEvents">
+      <HintPath>..\..\..\CustomEvents.dll</HintPath>
+    </Reference>
     <Reference Include="MCGalaxy_">
       <HintPath>..\..\..\MCGalaxy_.dll</HintPath>
-    </Reference>
-    <Reference Include="myCTF, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\myCTF.dll</HintPath>
-    </Reference>
-    <Reference Include="MyCTFEvents, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MyCTFEvents.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

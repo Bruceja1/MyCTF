@@ -2,7 +2,7 @@
 using MCGalaxy;
 using MCGalaxy.Commands;
 
-namespace MyCTF.Events;
+namespace MyCTF;
 
 public sealed class CmdMcDebug : Command2
 {

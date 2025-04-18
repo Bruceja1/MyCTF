@@ -5,21 +5,22 @@
     <LangVersion>10</LangVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1B135164-EDD5-4A71-AF5A-3F4216166D0B}</ProjectGuid>
+    <ProjectGuid>{4C92C165-64B7-437B-A882-838BF520BBD6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CmdMcDebug</RootNamespace>
-    <AssemblyName>CmdMcDebug</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RootNamespace>CustomEvents</RootNamespace>
+    <AssemblyName>CustomEvents</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <LangVersion>10</LangVersion>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\extra\commands\dll\</OutputPath>
+    <OutputPath>..\..\..\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -34,8 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MCGalaxy_">
-      <HintPath>..\..\..\MCGalaxy_.dll</HintPath>
+    <Reference Include="MCGalaxy_, Version=1.9.5.3, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\MCGalaxy_.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,7 +49,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CmdMcDebug.cs" />
+    <Compile Include="OnCTFPlayerInfoUpdated.cs" />
+    <Compile Include="OnCTFPlayerInfoUpdatedEvent.cs" />
+    <Compile Include="OnCapture.cs" />
+    <Compile Include="OnKill.cs" />
+    <Compile Include="OnCaptureEvent.cs" />
+    <Compile Include="OnKillEvent.cs" />
+    <Compile Include="OnWeaponContact.cs" />
+    <Compile Include="OnWeaponContactEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

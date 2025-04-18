@@ -1,6 +1,6 @@
 ﻿using MCGalaxy;
 using System;
 
-namespace MyCTF.Events;
+namespace MCGalaxy;
 
 public delegate void OnWeaponContact(Player p, Player opponent);

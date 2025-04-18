@@ -54,6 +54,7 @@ internal class MyCTFOfflineProfileStat : MyCTFProfileStat
     public static void SetPlayerData(Player p, PlayerData data)
     {
         hasAllAwards = HasAllAwards(data.Name);
+        p.Message(hasAllAwards.ToString());
         ctfData = MyCTFGame.GetOfflineStats(data);
     }
 

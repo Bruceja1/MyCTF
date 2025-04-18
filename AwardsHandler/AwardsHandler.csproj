@@ -5,14 +5,15 @@
     <LangVersion>10</LangVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4B3C0DA6-B421-4665-83D5-EFE10B6A3CEB}</ProjectGuid>
+    <ProjectGuid>{6D0A34E5-767A-48CC-B6E2-A394BD248972}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MyCTFEvents</RootNamespace>
-    <AssemblyName>MyCTFEvents</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RootNamespace>AwardsHandler</RootNamespace>
+    <AssemblyName>AwardsHandler</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <LangVersion>10</LangVersion>
@@ -34,8 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MCGalaxy_, Version=1.9.5.3, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="CustomEvents">
+      <HintPath>..\..\..\CustomEvents.dll</HintPath>
+    </Reference>
+    <Reference Include="MCGalaxy_">
       <HintPath>..\..\..\MCGalaxy_.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -48,10 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OnCTFPlayerInfoUpdated.cs" />
-    <Compile Include="OnCTFPlayerInfoUpdatedEvent.cs" />
-    <Compile Include="OnWeaponContact.cs" />
-    <Compile Include="OnWeaponContactEvent.cs" />
+    <Compile Include="AwardsHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

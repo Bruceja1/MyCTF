@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MyCTFEvents")]
+[assembly: AssemblyTitle("AwardsHandler")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MyCTFEvents")]
+[assembly: AssemblyProduct("AwardsHandler")]
 [assembly: AssemblyCopyright("Copyright ©  2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("4b3c0da6-b421-4665-83d5-efe10b6a3ceb")]
+[assembly: Guid("6d0a34e5-767a-48cc-b6e2-a394bd248972")]
 
 // Version information for an assembly consists of the following four values:
 //
