@@ -12,6 +12,8 @@ using MCGalaxy.Maths;
 using MCGalaxy.Tasks;
 using BlockID = System.UInt16;
 using System.Diagnostics;
+using MCGalaxy.DB;
+using MCGalaxy.Blocks;
 //using MyCTF.Events;
 
 namespace lavalaser
@@ -32,17 +34,18 @@ namespace lavalaser
         // Block placed but won't shoot the laser until block is broken.
         // Confirmed it does work with: gravel, sand, sapling, log, leaves, sponge, dirt, grass, wood
         // Confirmed it doesn't work with: stone, cobblestone, glass, gold ore, coal ore, iron ore, concrete, oak_slab
-        static BlockID igniteBlock = 19;
+        static BlockID igniteBlock = 13;
         //Block that the laser is made out of
         static BlockID lavaLaserBlock = 11;
         static ushort maxLaserLength = 8;
         static double cooldown = 0.7;
 
         const string laserExtrasKey = "LASER_DATA";
-         
+
         public override void Load(bool startup)
         {
             OnBlockChangedEvent.Register(OnBlockPlaced, Priority.Low);
+            OnBlockChangingEvent.Register(OnBlockPlacing, Priority.Low);
             //Level[] levels = LevelInfo.Loaded.Items;
             //foreach (Level lvl in levels)
             //{
@@ -57,18 +60,31 @@ namespace lavalaser
         public override void Unload(bool shutdown)
         {
             OnBlockChangedEvent.Unregister(OnBlockPlaced);
+            OnBlockChangingEvent.Unregister(OnBlockPlacing);
             OnBlockHandlersUpdatedEvent.Unregister(OnBlockHandlersUpdated);
             OnLevelLoadedEvent.Unregister(HandleLevelLoaded);
         }
-             
+
+        private static void OnBlockPlacing(Player p, ushort x, ushort y, ushort z, ushort block, bool placing, ref bool cancel)
+        {          
+            if (block != igniteBlock || !placing)
+            {
+                return;                
+            }
+            BlockID blockAt = p.level.GetBlock(x, y, z);          
+            if (blockAt != Block.Air || IsOnCooldown(p))
+            {
+                p.level.BroadcastRevert(x, y, z);
+                cancel = true;
+                return;
+            }         
+        }
         private static void OnBlockPlaced(Player p, ushort x, ushort y, ushort z, ChangeResult result)
         {
             int blockIndex = p.level.PosToInt(x, y, z);
 
-            // if (result != ChangeResult.Modified)
-          
-            BlockID newBlock = p.level.GetBlock(x, y, z);
-            if (newBlock != igniteBlock)
+            BlockID block = p.level.GetBlock(x, y, z);
+            if (block != igniteBlock)
             {
                 return;
             }
@@ -84,13 +100,13 @@ namespace lavalaser
 
             List<int> laserBlockIndexes = new List<int>();
 
-            if (IsOnCooldown(p))
-            {
-                p.level.AddUpdate(blockIndex, Block.Air);
-                return;
-            }
+            //if (IsOnCooldown(p))
+            //{
+            //    p.level.AddUpdate(blockIndex, Block.Air);
+            //    return;
+            //}
 
-            DoLaser(p, laserBlockIndexes, x, y ,z);
+            DoLaser(p, laserBlockIndexes, x, y, z);
 
             KillEnemy(p, laserBlockIndexes);
 
@@ -102,13 +118,13 @@ namespace lavalaser
                 p.Message("{4} placed block ID {0} at ({1}, {2}, {3})", newBlock, x, y, z, p.ColoredName);
                 Logger.Log(LogType.UserActivity, $"{p.ColoredName} placed block {newBlock} at {x}, {y}, {z}");
             } 
-            */   
+            */
         }
 
         private static string GetPlayerDirection(Player p, int yaw)
         {
             string direction;
-                    
+
             if (yaw >= 223 || yaw <= 31)
             {
                 direction = "North";
@@ -127,7 +143,7 @@ namespace lavalaser
             else
             {
                 direction = "West";
-            }           
+            }
 
             return direction;
         }
@@ -140,17 +156,17 @@ namespace lavalaser
                 {
                     int opponentLegPos = p.level.PosToInt((ushort)opponent.Pos.BlockCoords.X, (ushort)opponent.Pos.BlockCoords.Y, (ushort)opponent.Pos.BlockCoords.Z);
                     int opponentHeadPos = p.level.IntOffset(opponentLegPos, 0, -1, 0);
-                    
+
                     if (opponent != p && (opponentLegPos == blockPosition || opponentHeadPos == blockPosition))
-                    {                     
+                    {
                         try
                         {
                             OnWeaponContactEvent.Call(p, opponent);
                         }
-                        catch (Exception e) 
+                        catch (Exception e)
                         {
                             p.Message(e.ToString());
-                        }                                             
+                        }
                     }
                 }
             }
@@ -171,7 +187,7 @@ namespace lavalaser
 
             //p.Message(elapsedTime.TotalSeconds.ToString());
             if (elapsedTime < TimeSpan.FromSeconds(cooldown))
-            {               
+            {
                 return true;
             }
 
@@ -213,9 +229,8 @@ namespace lavalaser
 
                 // Laser will be interrupted if there is a block in front of it
                 BlockID nextBlock = p.level.GetBlock((ushort)(pos.X + incrementX), (ushort)(pos.Y + incrementY), (ushort)(pos.Z + incrementZ));
-
                 //if (nextBlock == Block.Air || nextBlock == lavaLaserBlock || nextBlock == igniteBlock)
-                if (nextBlock == Block.Air || nextBlock == igniteBlock)
+                if (nextBlock == Block.Air)
                 {
                     p.level.AddUpdate(index, lavaLaserBlock);
                     laserBlockIndexes.Add(index);
@@ -230,16 +245,12 @@ namespace lavalaser
                     p.level.AddUpdate(index, lavaLaserBlock);
                     laserBlockIndexes.Add(index);
                     break;
-                }            
+                }
             }
         }
 
         private static void OnBlockHandlersUpdated(Level lvl, BlockID block)
-        {           
-            //if (lvl.name != physicsLevelName)
-            //{
-            //    return;
-            //}
+        {
             if (block != lavaLaserBlock)
             {
                 return;
@@ -262,7 +273,8 @@ namespace lavalaser
         private static void HandleLevelLoaded(Level lvl)
         {
             lvl.PhysicsHandlers[lavaLaserBlock] = DoCleanup;
+            // Makes sure that, if the igniteBlock is gravel, the block does not fall.
+            lvl.PhysicsHandlers[igniteBlock] = delegate (Level level, ref PhysInfo C) { return; };
         }
     }
 }
-

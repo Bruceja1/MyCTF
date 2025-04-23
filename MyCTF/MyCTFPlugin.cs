@@ -13,6 +13,7 @@ public sealed class MyCTFPlugin : Plugin
 {
     private static Command cmdMyCTF = new CmdMyCTF();
     private static Command cmdXP = new CmdXP();
+    private static Command cmdMcDebug = new CmdMcDebug();
 
     public override string name => "MyCTF";
     DBTopStat killStat = new DBTopStat("Kills", "Most kills", "MyCTF", "Kills", TopStat.FormatInteger);
@@ -24,6 +25,7 @@ public sealed class MyCTFPlugin : Plugin
     {
         Command.Register(cmdMyCTF);
         Command.Register(cmdXP);
+        Command.Register(cmdMcDebug);
         TopStat.Register(killStat);
         TopStat.Register(captureStat);
         TopStat.Register(xpStat);
