@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CmdBlockSetAll.cs" />
     <Compile Include="CmdMcDebug.cs" />
     <Compile Include="CmdMyCTF.cs" />
     <Compile Include="CmdXP.cs" />

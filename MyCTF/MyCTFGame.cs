@@ -32,6 +32,7 @@ using MCGalaxy.Modules.Awards;
 using System.Diagnostics.Eventing.Reader;
 using MCGalaxy.Modules.Relay;
 using MCGalaxy.Modules.Relay.Discord;
+using BlockID = System.UInt16;
 
 namespace MyCTF;
 
@@ -221,7 +222,19 @@ public class MyCTFGame : RoundsGame
     {
         bool announce = false;
         HandleSentMap(p, Map, Map);
-        HandleJoinedLevel(p, Map, Map, ref announce);       
+        HandleJoinedLevel(p, Map, Map, ref announce);
+
+        for (int i = 0; i <= 767; i++)
+        {
+            string block = i.ToString();
+            if (Config.ItemBlocks.Contains(block))
+            {
+                p.Send(Packet.SetInventoryOrder((BlockID)i, (ushort)(Config.ItemBlocks.IndexOf(block) + 1), p.Session.hasExtBlocks));
+                continue;
+            }
+            p.Send(Packet.SetInventoryOrder(Block.Air, (BlockID)i, p.Session.hasExtBlocks));            
+        }
+        p.Session.SendHoldThis((ushort)Int32.Parse(Config.ItemBlocks[0]), false);       
     }
 
     public override void PlayerLeftGame(Player p)
@@ -234,6 +247,10 @@ public class MyCTFGame : RoundsGame
             RemoveFromTeam(p);           
             ResetPlayerColor(p);
             UpdateTabList(p);
+        }
+        for (int i = 0; i <= 767; i++)
+        {            
+            p.Send(Packet.SetInventoryOrder((BlockID)i, (BlockID)i, p.Session.hasExtBlocks));
         }
     }
 
@@ -275,6 +292,7 @@ public class MyCTFGame : RoundsGame
         //p.name = "test";
         //p.SkinName = "test";
         //p.SuperName = "test";
+        // Make block menu (inventory) appear completely empty       
     }
 
     private void LeaveTeam(Player p)

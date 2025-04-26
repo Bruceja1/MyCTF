@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using MCGalaxy;
 using System.Dynamic;
 using System;
+using MCGalaxy.Network;
+using BlockID = System.UInt16;
 
 namespace MyCTF;
 
@@ -14,6 +16,7 @@ public sealed class MyCTFPlugin : Plugin
     private static Command cmdMyCTF = new CmdMyCTF();
     private static Command cmdXP = new CmdXP();
     private static Command cmdMcDebug = new CmdMcDebug();
+    private static Command cmdBlockSetAll = new CmdBlockSetAll();
 
     public override string name => "MyCTF";
     DBTopStat killStat = new DBTopStat("Kills", "Most kills", "MyCTF", "Kills", TopStat.FormatInteger);
@@ -26,6 +29,7 @@ public sealed class MyCTFPlugin : Plugin
         Command.Register(cmdMyCTF);
         Command.Register(cmdXP);
         Command.Register(cmdMcDebug);
+        Command.Register(cmdBlockSetAll);
         TopStat.Register(killStat);
         TopStat.Register(captureStat);
         TopStat.Register(xpStat);
@@ -51,6 +55,7 @@ public sealed class MyCTFPlugin : Plugin
         IEvent<OnConfigUpdated>.Unregister(instance.ReloadConfig);
         Command.Unregister(cmdMyCTF);
         Command.Unregister(cmdXP);
+        Command.Unregister(cmdBlockSetAll);
         TopStat.Unregister(killStat);
         TopStat.Unregister(captureStat);
         TopStat.Unregister(xpStat);

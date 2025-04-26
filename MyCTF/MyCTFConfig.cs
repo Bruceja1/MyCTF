@@ -1,5 +1,6 @@
 ﻿using MCGalaxy.Config;
 using MCGalaxy.Games;
+using System.Collections.Generic;
 
 namespace MyCTF;
 
@@ -40,6 +41,10 @@ public sealed class MyCTFConfig : RoundsGameConfig
 
     [ConfigInt("win-xp-reward", "XP Rewards", 8)]
     public int WinXPReward = 8;
+
+    [ConfigStringList("item-blocks", "Item Blocks")]
+    public List<string> ItemBlocks = new List<string>(){ "13" };
+
 
     public override bool AllowAutoload => false;
 
