@@ -46,6 +46,18 @@ public class MyCTFGame : RoundsGame
         public int Kills;
         public int XP;
         public int Killstreak;
+        public DateTime lastKillTime;
+
+        public MyCtfStats()
+        {
+            Points = 0;
+            Captures = 0;
+            Tags = 0;
+            Kills = 0;
+            XP = 0;
+            Killstreak = 0;
+            lastKillTime = DateTime.MinValue;
+        }
     }
     
     private MyCTFMapConfig cfg = new MyCTFMapConfig();
@@ -1392,7 +1404,9 @@ public class MyCTFGame : RoundsGame
             {
                 ctfData.Killstreak = stats.Killstreak;
             }
-            OnKillEvent.Call(p, ctfData.Kills, stats.Kills, ctfData.Killstreak);            
+            double timeSinceLastKill = (DateTime.UtcNow - stats.lastKillTime).TotalSeconds; 
+            stats.lastKillTime = DateTime.UtcNow;
+            OnKillEvent.Call(p, ctfData.Kills, stats.Kills, ctfData.Killstreak, timeSinceLastKill);            
         }
         else if (stat.CaselessEq("Captures"))
         {

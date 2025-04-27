@@ -37,7 +37,7 @@ public class AwardsHandler : Plugin
         }
         return false;
     }
-    void HandleKill(Player p, int totalKills, int roundKills, int totalKillstreak)
+    void HandleKill(Player p, int totalKills, int roundKills, int totalKillstreak, double timeSinceLastKill)
     {
         p.Message("Round kills: " + roundKills.ToString());
         if (roundKills >= 30 && !HasAward(p, "Exterminator"))
@@ -47,6 +47,10 @@ public class AwardsHandler : Plugin
         if (totalKillstreak >= 10 && !HasAward(p, "Menace"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Menace");
+        }
+        if (timeSinceLastKill <= 0.5)
+        {
+            Command.Find("award").Use(Player.Console, "give " + p.truename + " Two Birds, One Laser");
         }
     }
 
