@@ -840,7 +840,6 @@ public class MyCTFGame : RoundsGame
             {              
                 Map.Message(deathMessage);
                 IncreaseStat(p, "Kills");
-                IncreaseStat(p, "Killstreak");
                 AwardXP(p, Config.KillXPReward);
                 ResetKillstreak(opponent);
                 return;
@@ -1388,7 +1387,12 @@ public class MyCTFGame : RoundsGame
         {
             stats.Kills += amount;
             ctfData.Kills += amount;
-            OnKillEvent.Call(p, ctfData.Kills, stats.Kills);
+            stats.Killstreak += amount;
+            if (stats.Killstreak > ctfData.Killstreak)
+            {
+                ctfData.Killstreak = stats.Killstreak;
+            }
+            OnKillEvent.Call(p, ctfData.Kills, stats.Kills);            
         }
         else if (stat.CaselessEq("Captures"))
         {
@@ -1400,14 +1404,6 @@ public class MyCTFGame : RoundsGame
         {
             stats.XP += amount;
             ctfData.XP += amount;
-        }
-        else if (stat.CaselessEq("Killstreak"))
-        {
-            stats.Killstreak += amount;
-            if (stats.Killstreak > ctfData.Killstreak)
-            {
-                ctfData.Killstreak = stats.Killstreak;
-            }
         }
         else
         {

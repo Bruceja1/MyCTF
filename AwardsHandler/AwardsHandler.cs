@@ -18,12 +18,14 @@ public class AwardsHandler : Plugin
     {
         OnKillEvent.Register(HandleKill, Priority.High);
         OnCaptureEvent.Register(HandleCapture, Priority.High);
+        OnPlayerConnectEvent.Register(HandlePlayerConnect, Priority.High);
     }
 
     public override void Unload(bool shutdown)
     {
         OnKillEvent.Unregister(HandleKill);
         OnCaptureEvent.Unregister(HandleCapture);
+        OnPlayerConnectEvent.Unregister(HandlePlayerConnect);
     }
 
     bool HasAward(Player p, string award)
@@ -38,7 +40,7 @@ public class AwardsHandler : Plugin
     void HandleKill(Player p, int totalKills, int roundKills)
     {
         p.Message("Round kills: " + roundKills.ToString());
-        if (roundKills >= 30 && !HasAward(p, "Exterminator"))
+        if (roundKills >= 3 && !HasAward(p, "Exterminator"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Exterminator");
         }
@@ -50,6 +52,14 @@ public class AwardsHandler : Plugin
         if (roundCaptures >= 3 && !HasAward(p, "Bringing It Home"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Bringing It Home");
+        }
+    }
+
+    void HandlePlayerConnect(Player p)
+    {
+        if (p.TotalTime.TotalDays >= 10)
+        {
+            Command.Find("award").Use(Player.Console, "give " + p.truename + " No-Lifer");
         }
     }
 }
