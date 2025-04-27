@@ -1392,7 +1392,7 @@ public class MyCTFGame : RoundsGame
             {
                 ctfData.Killstreak = stats.Killstreak;
             }
-            OnKillEvent.Call(p, ctfData.Kills, stats.Kills);            
+            OnKillEvent.Call(p, ctfData.Kills, stats.Kills, ctfData.Killstreak);            
         }
         else if (stat.CaselessEq("Captures"))
         {

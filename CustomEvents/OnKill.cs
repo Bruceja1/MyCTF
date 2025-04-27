@@ -3,4 +3,4 @@ using System;
 
 namespace MCGalaxy;
 
-public delegate void OnKill(Player p, int totalKills, int roundKills);
+public delegate void OnKill(Player p, int totalKills, int roundKills, int totalKillstreak);
