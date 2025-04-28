@@ -24,6 +24,6 @@ internal sealed class CmdXP : Command2
 
     public override void Help(Player p)
     {
-        p.Message("&T/XP &H-Shows how much XP you have and how much XP you need to reach the next rank.");  
+        p.Message("&T/xp &H- Shows how much XP you have and how much XP you need to reach the next rank.");  
     }
 }

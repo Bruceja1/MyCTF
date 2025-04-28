@@ -24,7 +24,7 @@ public sealed class MyCTFPlugin : Plugin
     DBTopStat killStat = new DBTopStat("Kills", "Most kills", "MyCTF", "Kills", TopStat.FormatInteger);
     DBTopStat killstreakStat = new DBTopStat("Killstreak", "Highest killstreaks", "MyCTF", "Killstreak", TopStat.FormatInteger);
     DBTopStat winStat = new DBTopStat("Wins", "Most wins", "MyCTF", "Wins", TopStat.FormatInteger);
-    DBTopStat winstreakStat = new DBTopStat("winstreak", "Highest winstreaks", "MyCTF", "Winstreak", TopStat.FormatInteger);
+    DBTopStat winstreakStat = new DBTopStat("Winstreak", "Highest winstreaks", "MyCTF", "Winstreak", TopStat.FormatInteger);
     public override void Load(bool startup)
     {
         Command.Register(cmdMyCTF);

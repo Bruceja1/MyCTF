@@ -304,13 +304,6 @@ public class MyCTFGame : RoundsGame
         UpdateTabList(p);
         Map.Message(p.ColoredName + Config.InfoColor + " joined the " + team.ColoredName + Config.InfoColor + " team");
         p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");
-        //UpdateTabList(p);
-        // Trying to find out how to update the name above a player's head only.
-        //p.DisplayName = "hi";
-        //p.BrushName = "test";       
-        //p.name = "test";
-        //p.SkinName = "test";
-        //p.SuperName = "test";
         // Make block menu (inventory) appear completely empty       
     }
 
@@ -424,10 +417,10 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Register(HandlePlayerCommand, Priority.High);
         IEvent<OnBlockChanging>.Register(HandleBlockChanging, Priority.High);
         IEvent<OnPlayerSpawning>.Register(HandlePlayerSpawning, Priority.High);
-        //IEvent<OnTabListEntryAdded>.Register(HandleTabListEntryAdded, Priority.High);
         IEvent<OnSentMap>.Register(HandleSentMap, Priority.High);
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
         IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
+        IEvent<OnAchievementGet>.Register(HandleAchievementGet, Priority.High);
         base.HookEventHandlers();
     }
 
@@ -438,10 +431,10 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Unregister(HandlePlayerCommand);
         IEvent<OnBlockChanging>.Unregister(HandleBlockChanging);
         IEvent<OnPlayerSpawning>.Unregister(HandlePlayerSpawning);
-        //IEvent<OnTabListEntryAdded>.Unregister(HandleTabListEntryAdded);
         IEvent<OnSentMap>.Unregister(HandleSentMap);
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
         IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
+        IEvent<OnAchievementGet>.Unregister(HandleAchievementGet);
         base.UnhookEventHandlers();
     }
 
@@ -560,30 +553,6 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    //private void HandleTabListEntryAdded(Entity entity, ref string tabName, ref string tabGroup, Player dst)
-    //{
-    //    if (entity is Player player && player.level == Map)
-    //    {
-    //        MyCtfTeam ctfTeam = TeamOf(player);
-    //        MyCtfData ctfData = TryGet(player);
-    //        if (player.Game.Referee)
-    //        {
-    //            tabGroup = "&2Referees";
-    //        }
-    //        else if (ctfTeam != null)
-    //        {
-    //            tabGroup = ctfTeam.ColoredName + " team";
-    //        }
-    //        else
-    //        {
-    //            tabGroup = "&7Spectators";
-    //        }
-    //    }
-    //}
-
-    // During the countdown:
-    // Players can join the map and select a team with /mc join red/blue
-    // After the countdown is over, players that are not in a team yet are assigned a random team.
     private void HandleSentMap(Player p, Level prevLevel, Level level)
     {
         if (level == Map)
@@ -681,12 +650,6 @@ public class MyCTFGame : RoundsGame
 
     private void ResetPlayerFlag(Player p, MyCtfData data)
     {
-        //Vec3S32 lastHeadPos = data.LastHeadPos;
-        //ushort x = (ushort)lastHeadPos.X;
-        //ushort y = (ushort)lastHeadPos.Y;
-        //ushort z = (ushort)lastHeadPos.Z;
-        //data.LastHeadPos = default(Vec3S32);
-        //Map.BroadcastRevert(x, y, z);
         RemoveFlagBot(p);
     }
 
@@ -694,16 +657,7 @@ public class MyCTFGame : RoundsGame
     {
         Vec3S32 blockCoords = p.Pos.BlockCoords;
         blockCoords.Y += 3;
-        //if (!(blockCoords == data.LastHeadPos))
-        //{
-        //    ResetPlayerFlag(p, data);
-        //    data.LastHeadPos = blockCoords;
-        //    ushort x = (ushort)blockCoords.X;
-        //    ushort y = (ushort)blockCoords.Y;
-        //    ushort z = (ushort)blockCoords.Z;
-        //    MyCtfTeam ctfTeam = Opposing(TeamOf(p));
-        //    Map.BroadcastChange(x, y, z, ctfTeam.FlagBlock);
-        //}
+
         PlayerBot flagBot = FindFlagBot(p);
 
         Position playerPos = p.Pos;
@@ -739,8 +693,8 @@ public class MyCTFGame : RoundsGame
                     {
                         continue;
                     }
-                    IncreaseStat(p, "Wins");
                     AwardXP(p, Config.WinXPReward);
+                    IncreaseStat(p, "Wins");                   
                 }
                 foreach (Player p in Opposing(winner).Members.Items)
                 {
@@ -760,6 +714,7 @@ public class MyCTFGame : RoundsGame
             DisplayBestRoundStats();
             foreach (Player player in PlayerInfo.Online.Items)
             {
+                player.SendCpeMessage(CpeMessageType.Announcement, message);
                 DisplayRoundStats(player);                
                 ResetPlayerColor(player);
                 UpdateStatusHUD(player);
@@ -803,8 +758,8 @@ public class MyCTFGame : RoundsGame
             MyCtfTeam ctfTeam = Opposing(team);
             ctfTeam.RespawnFlag(Map);
 
-            IncreaseStat(p, "Captures");
-            AwardXP(p, Config.CaptureXPReward);           
+            AwardXP(p, Config.CaptureXPReward);
+            IncreaseStat(p, "Captures");                      
         }
         else
         {
@@ -845,8 +800,8 @@ public class MyCTFGame : RoundsGame
             if (opponent.HandleDeath(4, GetKillstreakMessage(p)))
             {              
                 Map.Message(deathMessage);
-                IncreaseStat(p, "Kills");
                 AwardXP(p, Config.KillXPReward);
+                IncreaseStat(p, "Kills");               
                 ResetKillstreak(opponent);
                 return;
             }
@@ -1422,6 +1377,7 @@ public class MyCTFGame : RoundsGame
             {
                 ctfData.Winstreak = currentWinstreaks[p.truename];
             }
+            OnWinEvent.Call(p, ctfData.Wins, currentWinstreaks[p.truename]);
         }
         else
         {
@@ -1509,19 +1465,6 @@ public class MyCTFGame : RoundsGame
         roundStats[name] = stats;
     }
 
-    // /whois info
-    //public static void MyCTFLine(Player p, Player who)
-    //{
-    //    MyCTFLine(p, PlayerDB.Match(who, who.truename));
-    //}
-
-    //public static void MyCTFLine(Player p, PlayerData who)
-    //{
-    //    MyCtfData ctfData = GetOfflineStats(who);
-    //    p.Message("  &a{0} &aXP&S, &f{1} &SKills, &f{2} &SCaptures, &f{3} &SWins", ctfData.XP, ctfData.Kills, ctfData.Captures, ctfData.Wins);
-    //    p.Message("  &SHighest Killstreak: &f{0}&S, Highest Winstreak: &f{1}", ctfData.Killstreak, ctfData.Winstreak);
-    //}
-
     internal static MyCtfData GetOfflineStats(PlayerData pd)
     {
         // Can't use Get() here unfortunately, since Get() takes a Player object and not a PlayerData object.
@@ -1541,5 +1484,11 @@ public class MyCTFGame : RoundsGame
     {
         PlayerData pd = PlayerDB.FindData(p.truename);
         return GetOfflineStats(pd);
-    }  
+    }
+
+    private void HandleAchievementGet(Player p, string achievement)
+    {
+        p.SendCpeMessage(CpeMessageType.BigAnnouncement, "&3You have achieved:");
+        p.SendCpeMessage(CpeMessageType.SmallAnnouncement, "&b" + achievement);
+    }
 }   

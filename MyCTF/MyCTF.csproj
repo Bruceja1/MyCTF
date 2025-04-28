@@ -35,8 +35,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CustomEvents">
-      <HintPath>..\..\CustomEvents\CustomEvents.dll</HintPath>
+    <Reference Include="CustomEvents, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\CustomEvents.dll</HintPath>
     </Reference>
     <Reference Include="MCGalaxy_, Version=1.9.5.3, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

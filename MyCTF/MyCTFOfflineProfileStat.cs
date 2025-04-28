@@ -41,14 +41,14 @@ internal class MyCTFOfflineProfileStat : MyCTFProfileStat
     };
 
     public static bool HasAllAwards(string name)
-    {
+    {       
         List<string> awards = PlayerAwards.Get(name);
-        int totalAwards = AwardsList.Awards.Count;
+        int totalAwards = AwardsList.Awards.Count;       
         if (totalAwards != 0 && awards != null)
         {
             return awards.Count == totalAwards;
         }
-        return false;
+        return false;     
     }
 
     public static void SetPlayerData(Player p, PlayerData data)

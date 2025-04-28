@@ -10,6 +10,5 @@ namespace MyCTF;
 internal abstract class MyCTFProfileStat
 {
     public static bool hasAllAwards = false;
-    public static MyCtfData ctfData;
-   
+    public static MyCtfData ctfData;  
 }
