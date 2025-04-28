@@ -82,8 +82,8 @@ internal class MyCTFOfflineProfileStat : MyCTFProfileStat
 
     public static void MyCTFLine(Player p, PlayerData who)
     {
-        p.Message("  &a{0} &aXP{3}, &f{1} {3}Kills, &f{2} {3}Captures", ctfData.XP, ctfData.Kills, ctfData.Captures, hasAllAwards ? "&6" : "&S");
-        p.Message("  {1}Highest Killstreak: &f{0}", ctfData.Killstreak, hasAllAwards ? "&6" : "&S");
+        p.Message("  &a{0} &aXP{4}, &f{1} {4}Kills, &f{2} {4}Captures, &f{3} {4}Wins ", ctfData.XP, ctfData.Kills, ctfData.Captures, ctfData.Wins, hasAllAwards ? "&6" : "&S");
+        p.Message("  {2}Highest Killstreak: &f{0}{2}, Highest Winstreak: &f{1}", ctfData.Killstreak, ctfData.Winstreak, hasAllAwards ? "&6" : "&S");
     }
 
     public static void TimeSpentLine(Player p, PlayerData who)

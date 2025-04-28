@@ -40,23 +40,23 @@ public class MyCTFGame : RoundsGame
 {
     private struct MyCtfStats
     {
-        public int Points;
         public int Captures;
-        public int Tags;
         public int Kills;
         public int XP;
         public int Killstreak;
+        public int Wins;
+        public int Winstreak;
         public DateTime lastKillTime;
 
         public MyCtfStats()
         {
-            Points = 0;
             Captures = 0;
-            Tags = 0;
             Kills = 0;
             XP = 0;
             Killstreak = 0;
             lastKillTime = DateTime.MinValue;
+            Wins = 0;
+            Winstreak = 0;
         }
     }
     
@@ -76,12 +76,12 @@ public class MyCTFGame : RoundsGame
     {
         new ColumnDesc("ID", ColumnType.Integer, 0, autoInc: true, priKey: true, notNull: true),
         new ColumnDesc("Name", ColumnType.VarChar, 20),
-        new ColumnDesc("Points", ColumnType.UInt24),
-        new ColumnDesc("Captures", ColumnType.UInt24),
-        new ColumnDesc("tags", ColumnType.UInt24),
-        new ColumnDesc("Kills", ColumnType.UInt24),
         new ColumnDesc("XP", ColumnType.UInt24),
+        new ColumnDesc("Captures", ColumnType.UInt24),
+        new ColumnDesc("Kills", ColumnType.UInt24),       
         new ColumnDesc("Killstreak", ColumnType.UInt24),
+        new ColumnDesc("Wins", ColumnType.UInt24),
+        new ColumnDesc("Winstreak", ColumnType.UInt24),
     };
 
     public override string GameName => "MyCTF";
@@ -89,6 +89,7 @@ public class MyCTFGame : RoundsGame
     protected override string WelcomeMessage => "&9Capture the Flag &Sis running! Type &T/MyCTF go &Sto join";
     private MyCTFTimer timer = new MyCTFTimer();
     private Dictionary<string, MyCtfStats> roundStats = new Dictionary<string, MyCtfStats>();
+    private Dictionary<string, int> currentWinstreaks = new Dictionary<string, int>();
     public override RoundsGameConfig GetConfig()
     {
         return Config;
@@ -109,12 +110,12 @@ public class MyCTFGame : RoundsGame
 
         ctfData = new MyCtfData();
         MyCtfStats ctfStats = LoadStats(p.name);
-        ctfData.Captures = ctfStats.Captures;
-        ctfData.Points = ctfStats.Points;
-        ctfData.Tags = ctfStats.Tags;
-        ctfData.Kills = ctfStats.Kills;
         ctfData.XP = ctfStats.XP;
+        ctfData.Captures = ctfStats.Captures;
+        ctfData.Kills = ctfStats.Kills;      
         ctfData.Killstreak = ctfStats.Killstreak;
+        ctfData.Wins = ctfStats.Wins;
+        ctfData.Winstreak = ctfStats.Winstreak;
         p.Extras["MCG_MYCTF_DATA"] = ctfData; // TODO: Why not p.Extras[myctfExtrasKey] = ctfData; ?
         return ctfData;
     }
@@ -168,16 +169,19 @@ public class MyCTFGame : RoundsGame
         p.Message("{0} &Steam: {1} captures", Red.ColoredName, Red.Captures);
         MyCtfData playerData = Get(p);
         p.Message($"Captures: {playerData.Captures.ToString()}");
-        p.Message($"Tags: {playerData.Tags.ToString()}");
-        p.Message($"Kills: {playerData.Kills.ToString()}");
-        p.Message($"Points: {playerData.Points.ToString()}");
         p.Message($"XP: {playerData.XP.ToString()}");
+        p.Message($"Kills: {playerData.Kills.ToString()}");       
         p.Message($"Highest killstreak: {playerData.Killstreak.ToString()}");
+        p.Message($"Wins: {playerData.Winstreak.ToString()}");
+        p.Message($"Highest winstreak: {playerData.Winstreak.ToString()}");
         p.Message($"HasFlag: {playerData.HasFlag.ToString()}");
-        p.Message($"TagCooldown {playerData.TagCooldown.ToString()}");
         p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
         p.Message($"LastHeadPos: {playerData.LastHeadPos.ToString()}");
         p.Message($"Your team is: {(TeamOf(p) == null ? "No team" : TeamOf(p).Name)}");
+        if (currentWinstreaks.ContainsKey(p.truename))
+        {
+            p.Message($"Your current winstreak is: {currentWinstreaks[p.truename]}");
+        }
     }
 
     protected override void StartGame()
@@ -251,7 +255,7 @@ public class MyCTFGame : RoundsGame
 
     public override void PlayerLeftGame(Player p)
     {
-        MyCtfTeam ctfTeam = TeamOf(p);
+        MyCtfTeam ctfTeam = TeamOf(p);       
         if (ctfTeam != null)
         {
             //ctfTeam.Members.Remove(p);
@@ -260,6 +264,9 @@ public class MyCTFGame : RoundsGame
             ResetPlayerColor(p);
             UpdateTabList(p);
         }
+       
+        currentWinstreaks[p.truename] = 0;
+        
         for (int i = 0; i <= 767; i++)
         {            
             p.Send(Packet.SetInventoryOrder((BlockID)i, (BlockID)i, p.Session.hasExtBlocks));
@@ -373,12 +380,12 @@ public class MyCTFGame : RoundsGame
     private static MyCtfStats ParseStats(ISqlRecord record)
     {
         MyCtfStats result = default(MyCtfStats);
-        result.Points = record.GetInt("Points");
-        result.Captures = record.GetInt("Captures");
-        result.Tags = record.GetInt("Tags");
-        result.Kills = record.GetInt("Kills");
         result.XP = record.GetInt("XP");
+        result.Captures = record.GetInt("Captures");
+        result.Kills = record.GetInt("Kills");      
         result.Killstreak = record.GetInt("Killstreak");
+        result.Wins = record.GetInt("Wins");
+        result.Winstreak = record.GetInt("Winstreak");
         return result;
     }
 
@@ -400,12 +407,12 @@ public class MyCTFGame : RoundsGame
             return;
         }
 
-        if (ctfData != null && (ctfData.Points != 0 || ctfData.Captures != 0 || ctfData.Tags != 0) || ctfData.Kills != 0 || ctfData.XP != 0 || ctfData.Killstreak != 0)
+        if (ctfData != null && (ctfData.XP != 0 || ctfData.Captures != 0 || ctfData.Kills != 0 || ctfData.Killstreak != 0 || ctfData.Wins != 0 || ctfData.Winstreak != 0))
         {
-            object[] args = new object[7] { ctfData.Points, ctfData.Captures, ctfData.Tags, ctfData.Kills, ctfData.XP, ctfData.Killstreak, p.name };
-            if (Database.UpdateRows("MyCTF", "Points=@0, Captures=@1, tags=@2, Kills=@3, XP=@4, Killstreak=@5", "WHERE Name=@6", args) == 0)
+            object[] args = new object[7] { ctfData.XP, ctfData.Captures, ctfData.Kills, ctfData.Killstreak, ctfData.Wins, ctfData.Winstreak, p.name };
+            if (Database.UpdateRows("MyCTF", "XP=@0, Captures=@1, Kills=@2, Killstreak=@3, Wins=@4, Winstreak=@5", "WHERE Name=@6", args) == 0)
             {
-                Database.AddRow("MyCTF", "Points, Captures, tags, Kills, XP, Killstreak, Name", args);
+                Database.AddRow("MyCTF", "XP, Captures, Kills, Killstreak, Wins, Winstreak, Name", args);
             }
         }
     }
@@ -585,6 +592,10 @@ public class MyCTFGame : RoundsGame
             {
                 roundStats.Add(p.truename, new MyCtfStats());
             }
+            if (!currentWinstreaks.ContainsKey(p.truename))
+            {
+                currentWinstreaks.Add(p.truename, 0);
+            }
             ResetKillstreak(p);
             OutputMapSummary(p, Map.name, Map.Config);
 
@@ -661,33 +672,10 @@ public class MyCTFGame : RoundsGame
                 DrawPlayerFlag(player, ctfData);
             }
 
-            if (ctfTeam == null || ctfData.TagCooldown || !OnOwnTeamSide(player.Pos.BlockZ, ctfTeam))
+            if (ctfTeam == null || !OnOwnTeamSide(player.Pos.BlockZ, ctfTeam))
             {
                 continue;
-            }
-
-            MyCtfTeam ctfTeam2 = Opposing(ctfTeam);
-            Player[] items2 = ctfTeam2.Members.Items;
-            Player[] array2 = items2;
-            foreach (Player player2 in array2)
-            {
-                if (IGame.InRange(player, player2, dist))
-                {
-                    MyCtfData ctfData2 = Get(player2);
-                    ctfData2.TagCooldown = true;
-                    player2.Message(player.ColoredName + " &Stagged you!");
-                    PlayerActions.Respawn(player2);
-                    if (ctfData2.HasFlag)
-                    {
-                        DropFlag(player, ctfTeam2);                       
-                    }
-
-                    //ctfData.Points += cfg.Tag_PointsGained;
-                    //ctfData2.Points -= cfg.Tag_PointsLost;
-                    ctfData.Tags++;
-                    ctfData2.TagCooldown = false;
-                }
-            }
+            }           
         }
     }
 
@@ -733,34 +721,40 @@ public class MyCTFGame : RoundsGame
         {
             RoundInProgress = false;
             timer.Stop();
+            MyCtfTeam winner = null;
+         
             if (Blue.Captures > Red.Captures)
             {
-                Map.Message(Blue.ColoredName + Config.InfoColor + " won this round of CTF!");
-                foreach (Player p in Blue.Members.Items)
-                {
-                    if (p == null)
-                    {
-                        continue;
-                    }
-                    AwardXP(p, Config.WinXPReward);
-                }
+                winner = Blue;
             }
             else if (Red.Captures > Blue.Captures)
             {
-                Map.Message(Red.ColoredName + Config.InfoColor + " won this round of CTF!");
-                foreach (Player p in Red.Members.Items)
+                winner = Red;
+            }
+            if (winner != null)
+            {
+                foreach (Player p in winner.Members.Items)
                 {
                     if (p == null)
                     {
                         continue;
                     }
+                    IncreaseStat(p, "Wins");
                     AwardXP(p, Config.WinXPReward);
                 }
+                foreach (Player p in Opposing(winner).Members.Items)
+                {
+                    if (p == null)
+                    {
+                        continue;
+                    }
+                    currentWinstreaks[p.truename] = 0;
+                }
             }
-            else
-            {
-                Map.Message(Config.InfoColor + "The round ended in a tie!");
-            }           
+            
+            string message = winner == null ? "The round ended in a tie!" : winner.ColoredName + Config.InfoColor + " won this round of CTF!";
+            Map.Message(message);
+
             ResetFlagsState();
             ResetTeams();
             DisplayBestRoundStats();
@@ -928,7 +922,6 @@ public class MyCTFGame : RoundsGame
     // Spaghetti code but it works tho
     public override void Start(Player p, string map, int rounds)
     {
-        p.Message("&5Start called!");
         if (rounds == 0)
         {
             rounds = int.MaxValue;
@@ -1395,7 +1388,18 @@ public class MyCTFGame : RoundsGame
         string name = p.truename;
         MyCtfStats stats = roundStats[name];
         MyCtfData ctfData = Get(p);
-        if (stat.CaselessEq("Kills"))
+        if (stat.CaselessEq("XP"))
+        {
+            stats.XP += amount;
+            ctfData.XP += amount;
+        }
+        else if (stat.CaselessEq("Captures"))
+        {
+            stats.Captures += amount;
+            ctfData.Captures += amount;
+            OnCaptureEvent.Call(p, ctfData.Captures, stats.Captures);
+        }
+        else if (stat.CaselessEq("Kills"))
         {
             stats.Kills += amount;
             ctfData.Kills += amount;
@@ -1408,16 +1412,16 @@ public class MyCTFGame : RoundsGame
             stats.lastKillTime = DateTime.UtcNow;
             OnKillEvent.Call(p, ctfData.Kills, stats.Kills, ctfData.Killstreak, timeSinceLastKill);            
         }
-        else if (stat.CaselessEq("Captures"))
+               
+        else if (stat.CaselessEq("Wins"))
         {
-            stats.Captures += amount;
-            ctfData.Captures += amount;
-            OnCaptureEvent.Call(p, ctfData.Captures, stats.Captures);
-        }
-        else if (stat.CaselessEq("XP"))
-        {
-            stats.XP += amount;
-            ctfData.XP += amount;
+            stats.Wins += amount;
+            ctfData.Wins += amount;
+            currentWinstreaks[p.truename] += 1;
+            if (currentWinstreaks[p.truename] > ctfData.Winstreak)
+            {
+                ctfData.Winstreak = currentWinstreaks[p.truename];
+            }
         }
         else
         {
@@ -1506,17 +1510,17 @@ public class MyCTFGame : RoundsGame
     }
 
     // /whois info
-    public static void MyCTFLine(Player p, Player who)
-    {
-        MyCTFLine(p, PlayerDB.Match(who, who.truename));
-    }
+    //public static void MyCTFLine(Player p, Player who)
+    //{
+    //    MyCTFLine(p, PlayerDB.Match(who, who.truename));
+    //}
 
-    public static void MyCTFLine(Player p, PlayerData who)
-    {
-        MyCtfData ctfData = GetOfflineStats(who);
-        p.Message("  &a{0} &aXP&S, &f{1} &SKills, &f{2} &SCaptures.", ctfData.XP, ctfData.Kills, ctfData.Captures);
-        p.Message("  &SHighest Killstreak: &f{0}", ctfData.Killstreak);
-    }
+    //public static void MyCTFLine(Player p, PlayerData who)
+    //{
+    //    MyCtfData ctfData = GetOfflineStats(who);
+    //    p.Message("  &a{0} &aXP&S, &f{1} &SKills, &f{2} &SCaptures, &f{3} &SWins", ctfData.XP, ctfData.Kills, ctfData.Captures, ctfData.Wins);
+    //    p.Message("  &SHighest Killstreak: &f{0}&S, Highest Winstreak: &f{1}", ctfData.Killstreak, ctfData.Winstreak);
+    //}
 
     internal static MyCtfData GetOfflineStats(PlayerData pd)
     {
@@ -1524,12 +1528,12 @@ public class MyCTFGame : RoundsGame
         // Afaik it is not possible to convert a PlayerData object into a Player object.
         MyCtfStats ctfStats = LoadStats(pd.Name);
         MyCtfData ctfData = new MyCtfData();
-        ctfData.Captures = ctfStats.Captures;
-        ctfData.Points = ctfStats.Points;
-        ctfData.Tags = ctfStats.Tags;
-        ctfData.Kills = ctfStats.Kills;
         ctfData.XP = ctfStats.XP;
+        ctfData.Captures = ctfStats.Captures;
+        ctfData.Kills = ctfStats.Kills;       
         ctfData.Killstreak = ctfStats.Killstreak;
+        ctfData.Wins = ctfStats.Wins;
+        ctfData.Winstreak = ctfStats.Winstreak;
         return ctfData;
     }
 
