@@ -75,7 +75,7 @@ public class AwardsHandler : Plugin
 
     void HandlePlayerConnect(Player p)
     {
-        if (p.TotalTime.TotalDays >= 10)
+        if (p.TotalTime.TotalDays >= 10 && !HasAward(p, "No-Lifer"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " No-Lifer");
             OnAchievementGetEvent.Call(p, "No-Lifer");

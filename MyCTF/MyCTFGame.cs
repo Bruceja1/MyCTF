@@ -33,6 +33,7 @@ using System.Diagnostics.Eventing.Reader;
 using MCGalaxy.Modules.Relay;
 using MCGalaxy.Modules.Relay.Discord;
 using BlockID = System.UInt16;
+using MCGalaxy.Eco;
 
 namespace MyCTF;
 
@@ -1208,6 +1209,13 @@ public class MyCTFGame : RoundsGame
         CheckForPromotion(p);        
     }
 
+    private void AwardMoney(Player p, int amount)
+    {
+        //Command.Find("give").Use(Player.Console, p.truename + " " + amount.ToString());
+        p.SetMoney(p.money + amount);
+        p.Message(Config.InfoColor + "You earned &f" + amount.ToString() + " " + Server.Config.Currency + Config.InfoColor + ".");
+    }
+
     private void UpdateStatusHUD(Player p)
     {
         if (p == null || Map == null || Blue == null || Red == null)
@@ -1220,7 +1228,7 @@ public class MyCTFGame : RoundsGame
         }
 
         MyCtfData ctfData = Get(p);
-        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "&a" + (ctfData != null ? ctfData.XP.ToString() : "?") + " XP" + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
+        string mapStatus = Config.InfoColor + "Rank: " + p.group.ColoredName + Config.InfoColor + " | " + "Map: " + "&f" + Map.name;
         string blueStatus = Blue.Color + Blue.Name + ": " + Config.InfoColor + "Players: " + "&f" + Blue.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Blue.Captures + "/" + "&f" + Config.MaxCaptures;
         string redStatus = Red.Color + Red.Name + ": " + Config.InfoColor + "Players: " + "&f" + Red.Members.Count + Config.InfoColor + " | " + "Captures: &f" + Red.Captures + "/" + "&f" + Config.MaxCaptures;
       
@@ -1350,12 +1358,14 @@ public class MyCTFGame : RoundsGame
         }
         else if (stat.CaselessEq("Captures"))
         {
+            AwardMoney(p, Config.CaptureMoneyReward);
             stats.Captures += amount;
             ctfData.Captures += amount;
             OnCaptureEvent.Call(p, ctfData.Captures, stats.Captures);
         }
         else if (stat.CaselessEq("Kills"))
         {
+            AwardMoney(p, Config.KillMoneyReward);
             stats.Kills += amount;
             ctfData.Kills += amount;
             stats.Killstreak += amount;
@@ -1370,6 +1380,7 @@ public class MyCTFGame : RoundsGame
                
         else if (stat.CaselessEq("Wins"))
         {
+            AwardMoney(p, Config.WinMoneyReward);
             stats.Wins += amount;
             ctfData.Wins += amount;
             currentWinstreaks[p.truename] += 1;

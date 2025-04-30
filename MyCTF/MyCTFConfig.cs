@@ -42,6 +42,15 @@ public sealed class MyCTFConfig : RoundsGameConfig
     [ConfigInt("win-xp-reward", "XP Rewards", 8)]
     public int WinXPReward = 8;
 
+    [ConfigInt("kill-money-reward", "Money Rewards", 5)]
+    public int KillMoneyReward = 5;
+
+    [ConfigInt("capture-money-reward", "Money Rewards", 12)]
+    public int CaptureMoneyReward = 12;
+
+    [ConfigInt("win-money-reward", "Money Rewards", 30)]
+    public int WinMoneyReward = 30;
+
     [ConfigStringList("item-blocks", "Item Blocks")]
     public List<string> ItemBlocks = new List<string>(){ "13" };
 
