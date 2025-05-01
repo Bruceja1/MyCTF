@@ -41,13 +41,14 @@ public class MyCTFGame : RoundsGame
 {
     private struct MyCtfStats
     {
-        public int Captures;
-        public int Kills;
         public int XP;
+        public int Captures;
+        public int Kills;       
         public int Killstreak;
         public int Wins;
         public int Winstreak;
         public DateTime lastKillTime;
+        public int Money;
 
         public MyCtfStats()
         {
@@ -58,6 +59,7 @@ public class MyCTFGame : RoundsGame
             lastKillTime = DateTime.MinValue;
             Wins = 0;
             Winstreak = 0;
+            Money = 0;
         }
     }
     
@@ -1359,6 +1361,7 @@ public class MyCTFGame : RoundsGame
         else if (stat.CaselessEq("Captures"))
         {
             AwardMoney(p, Config.CaptureMoneyReward);
+            stats.Money += Config.CaptureMoneyReward;
             stats.Captures += amount;
             ctfData.Captures += amount;
             OnCaptureEvent.Call(p, ctfData.Captures, stats.Captures);
@@ -1366,6 +1369,7 @@ public class MyCTFGame : RoundsGame
         else if (stat.CaselessEq("Kills"))
         {
             AwardMoney(p, Config.KillMoneyReward);
+            stats.Money += Config.KillMoneyReward;
             stats.Kills += amount;
             ctfData.Kills += amount;
             stats.Killstreak += amount;
@@ -1381,6 +1385,7 @@ public class MyCTFGame : RoundsGame
         else if (stat.CaselessEq("Wins"))
         {
             AwardMoney(p, Config.WinMoneyReward);
+            stats.Money += Config.WinMoneyReward;
             stats.Wins += amount;
             ctfData.Wins += amount;
             currentWinstreaks[p.truename] += 1;
@@ -1403,7 +1408,7 @@ public class MyCTFGame : RoundsGame
         int kills = roundStats[name].Kills;
         int captures = roundStats[name].Captures;
         p.Message(Config.InfoColor + "You got " + "&f" + kills.ToString() + Config.InfoColor + (kills == 1 ? " Kill" : " Kills") + " and " + "&f" + captures.ToString() + Config.InfoColor + (captures == 1 ? " Capture" : " Captures") + " this round.");
-        p.Message(Config.InfoColor + "You earned " + "&a" + roundStats[name].XP.ToString() + " XP" + Config.InfoColor + " this round.");
+        p.Message(Config.InfoColor + "You earned " + "&a" + roundStats[name].XP.ToString() + " XP" + Config.InfoColor + " and " + "&f" + roundStats[name].Money.ToString() + " " + Server.Config.Currency + Config.InfoColor + " this round.");
     }
 
     private void DisplayBestRoundStats()
