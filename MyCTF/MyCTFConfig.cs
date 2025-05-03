@@ -12,8 +12,8 @@ public sealed class MyCTFConfig : RoundsGameConfig
     [ConfigInt("collisions-check-interval", "Collisions", 150, 20, 2000)]
     public int CollisionsCheckInterval = 150;
 
-    [ConfigInt("countdown-timer", "Game properties", 5)]
-    public int CountdownTimer = 300;
+    [ConfigInt("countdown-timer", "Game properties", 30)]
+    public int CountdownTimer = 30;
 
     [ConfigString("info-color", "Game properties", "&6")]
     public string InfoColor = "&6";
@@ -55,7 +55,7 @@ public sealed class MyCTFConfig : RoundsGameConfig
     public List<string> ItemBlocks = new List<string>(){ "13" };
 
 
-    public override bool AllowAutoload => false;
+    public override bool AllowAutoload => true;
 
     protected override string GameName => "MyCTF";
 }

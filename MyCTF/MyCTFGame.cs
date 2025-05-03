@@ -240,9 +240,26 @@ public class MyCTFGame : RoundsGame
     public override void PlayerJoinedGame(Player p)
     {
         bool announce = false;
-        HandleSentMap(p, Map, Map);
         HandleJoinedLevel(p, Map, Map, ref announce);
+     
+        if (!roundStats.ContainsKey(p.truename))
+        {
+            roundStats.Add(p.truename, new MyCtfStats());
+        }
+        if (!currentWinstreaks.ContainsKey(p.truename))
+        {
+            currentWinstreaks.Add(p.truename, 0);
+        }
 
+        if (RoundInProgress)
+        {
+            if (TeamOf(p) == null)
+            {
+                AutoAssignTeam(p);
+            }           
+            MoveToTeamSpawn(p);
+        }
+        
         for (int i = 0; i <= 767; i++)
         {
             string block = i.ToString();
@@ -263,13 +280,14 @@ public class MyCTFGame : RoundsGame
         {
             //ctfTeam.Members.Remove(p);
             DropFlag(p, ctfTeam);
-            RemoveFromTeam(p);           
+            RemoveFromTeam(p);
             ResetPlayerColor(p);
             UpdateTabList(p);
         }
        
         currentWinstreaks[p.truename] = 0;
-        
+        ResetKillstreak(p);
+
         for (int i = 0; i <= 767; i++)
         {            
             p.Send(Packet.SetInventoryOrder((BlockID)i, (BlockID)i, p.Session.hasExtBlocks));
@@ -278,6 +296,18 @@ public class MyCTFGame : RoundsGame
 
     private void AutoAssignTeam(Player p)
     {
+        if (Blue.Captures > Red.Captures)
+        {
+            JoinTeam(p, Red);
+            return;
+        }
+
+        if (Red.Captures > Blue.Captures)
+        {
+            JoinTeam(p, Blue);
+            return;
+        }
+
         if (Blue.Members.Count > Red.Members.Count)
         {
             JoinTeam(p, Red);
@@ -296,7 +326,7 @@ public class MyCTFGame : RoundsGame
 
     private void JoinTeam(Player p, MyCtfTeam team)
     {
-        if (team.Members.Count > Opposing(team).Members.Count)
+        if (!RoundInProgress && (team.Members.Count > Opposing(team).Members.Count))
         {
             p.Message("&cThis team is full!");
             return;           
@@ -306,8 +336,7 @@ public class MyCTFGame : RoundsGame
         p.UpdateColor(team.Color);
         UpdateTabList(p);
         Map.Message(p.ColoredName + Config.InfoColor + " joined the " + team.ColoredName + Config.InfoColor + " team");
-        p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");
-        // Make block menu (inventory) appear completely empty       
+        p.Message(Config.InfoColor + "You are now on the " + team.ColoredName + Config.InfoColor + " team!");       
     }
 
     private void LeaveTeam(Player p)
@@ -420,7 +449,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Register(HandlePlayerCommand, Priority.High);
         IEvent<OnBlockChanging>.Register(HandleBlockChanging, Priority.High);
         IEvent<OnPlayerSpawning>.Register(HandlePlayerSpawning, Priority.High);
-        IEvent<OnSentMap>.Register(HandleSentMap, Priority.High);
+        IEvent<OnPlayerConnect>.Register(PlayerJoinedGame, Priority.High);
         IEvent<OnJoinedLevel>.Register(HandleJoinedLevel, Priority.High);
         IEvent<OnWeaponContact>.Register(HandleWeaponContact, Priority.High);
         IEvent<OnAchievementGet>.Register(HandleAchievementGet, Priority.High);
@@ -434,7 +463,7 @@ public class MyCTFGame : RoundsGame
         IEvent<OnPlayerCommand>.Unregister(HandlePlayerCommand);
         IEvent<OnBlockChanging>.Unregister(HandleBlockChanging);
         IEvent<OnPlayerSpawning>.Unregister(HandlePlayerSpawning);
-        IEvent<OnSentMap>.Unregister(HandleSentMap);
+        IEvent<OnPlayerConnect>.Unregister(PlayerJoinedGame);
         IEvent<OnJoinedLevel>.Unregister(HandleJoinedLevel);
         IEvent<OnWeaponContact>.Unregister(HandleWeaponContact);
         IEvent<OnAchievementGet>.Unregister(HandleAchievementGet);
@@ -455,6 +484,13 @@ public class MyCTFGame : RoundsGame
 
     private void HandlePlayerChat(Player p, string message)
     {
+        if (p.level == Map && Running && message == ".")
+        {
+            OutputStatus(p);
+            p.cancelchat = true;
+            return;
+        }
+
         if (p.level != Map || !Get(p).TeamChatting)
         {
             Chat.MessageChat(ChatScope.Global, p, p.group.ColoredName + "• " + p.color + p.prefix + p.ColoredName + ": " + Config.ChatColor + message, Map, null, true);
@@ -556,33 +592,9 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    private void HandleSentMap(Player p, Level prevLevel, Level level)
-    {
-        if (level == Map)
-        {
-            if (!roundStats.ContainsKey(p.truename))
-            {
-                roundStats.Add(p.truename, new MyCtfStats());
-            }
-            if (!currentWinstreaks.ContainsKey(p.truename))
-            {
-                currentWinstreaks.Add(p.truename, 0);
-            }
-            ResetKillstreak(p);
-            OutputMapSummary(p, Map.name, Map.Config);
-
-            // Randomly assigns team regardless if the countdown is still in progress
-            // but when countdown is in progress, no auto team should be assigned.
-            if (TeamOf(p) == null && RoundInProgress)
-            {
-                AutoAssignTeam(p);
-            }
-        }
-    }
-
     private void HandleJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
     {
-        HandleJoinedCommon(p, prevLevel, level, ref announce);
+        OutputMapSummary(p, Map.name, Map.Config);
     }
 
     protected override void DoRound()
@@ -599,7 +611,7 @@ public class MyCTFGame : RoundsGame
                 if (player.level == Map)
                 {                   
                     PlayerJoinedGame(player);
-                    MoveToTeamSpawn(player);                   
+                                      
                 }              
             }
             
@@ -827,19 +839,25 @@ public class MyCTFGame : RoundsGame
             {
                 return;
             }
-            message = $"global &bMatch starts in &f{Config.CountdownTimer - elapsedTime.Seconds} &bseconds!";
+            message = $"&bMatch starts in &f{Config.CountdownTimer - elapsedTime.Seconds} &bseconds!";
 
             Thread.Sleep(100); // Prevents the while loop from freezing the server
 
             if (elapsedTime.Seconds % 10 == 0)
             {
-                Command.Find("Announce").Use(Player.Console, message);
+                foreach (Player p in PlayerInfo.Online.Items)
+                {
+                    p.SendCpeMessage(CpeMessageType.Announcement, message);
+                }
             }
 
             // When the countdown reaches 5, announce the time left every second instead of every ten seconds.
             if (Config.CountdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0)
             {
-                Command.Find("Announce").Use(Player.Console, message);
+                foreach (Player p in PlayerInfo.Online.Items)
+                {
+                    p.SendCpeMessage(CpeMessageType.Announcement, message);
+                }
             }
 
             now = DateTime.UtcNow;
@@ -857,13 +875,19 @@ public class MyCTFGame : RoundsGame
 
         if (playerCount >= 2)
         {
-            Command.Find("Announce").Use(Player.Console, $"global &aGood luck!");
+            foreach (Player p in PlayerInfo.Online.Items)
+            {
+                p.SendCpeMessage(CpeMessageType.Announcement, "&aGood luck!");
+            }
             return;
         }
 
         else
         {
-            Command.Find("Announce").Use(Player.Console, $"global &4Need &f2 &4or more players to start!");
+            foreach (Player p in PlayerInfo.Online.Items)
+            {
+                p.SendCpeMessage(CpeMessageType.Announcement, "&4Need &f2 &4or more players to start!");
+            }
 
             if (Running)
             {
@@ -875,11 +899,10 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    // override start
-    // add countdown
-    // Spaghetti code but it works tho
+    // Override start
     public override void Start(Player p, string map, int rounds)
     {
+        Logger.Log(LogType.Debug, "Starting MyCTF.....");
         if (rounds == 0)
         {
             rounds = int.MaxValue;
@@ -966,7 +989,6 @@ public class MyCTFGame : RoundsGame
         p.Message("p.Extras data cleared");
     }
 
-    // TODO: move message validation to CmdMyCTF
     public void HandleJoinCmd(Player p, string[] message)
     {
         if (!Running || message.Length == 1)
@@ -1208,7 +1230,7 @@ public class MyCTFGame : RoundsGame
         p.Message(message);
         p.SendCpeMessage(CpeMessageType.SmallAnnouncement, message);
         SaveStats(p);
-        CheckForPromotion(p);        
+        CheckForPromotion(p);
     }
 
     private void AwardMoney(Player p, int amount)
@@ -1250,7 +1272,6 @@ public class MyCTFGame : RoundsGame
             if (timeLeft != 0 && timer.secondHasPassed)
             {
                 p.SendCpeMessage(CpeMessageType.Announcement, timeLeftMessage);
-                p.SendCpeMessage(CpeMessageType.Normal, timeLeftMessage);
             }
         }
     }
@@ -1419,31 +1440,26 @@ public class MyCTFGame : RoundsGame
             displayCount = roundStats.Keys.Count;
         }
 
-        List<Player> players = new List<Player>();
-        foreach (string name in roundStats.Keys)
-        {
-            Player player = PlayerInfo.FindExact(name);
-            players.Add(player);
-        }
-        
-        players.Sort((a, b) => roundStats[a.truename].Kills.CompareTo(roundStats[b.truename].Kills));
+        List<string> players = roundStats.Keys.ToList();
+
+        players.Sort((a, b) => roundStats[a].Kills.CompareTo(roundStats[b].Kills));
         players.Reverse();
         Map.Message(Config.InfoColor + "Most Kills:");
         for (int i = 0; i < displayCount; i++)
         {
             int placement = i + 1;
-            Player player = players[i];
-            Map.Message(Config.InfoColor + placement.ToString() + ". " + player.ColoredName + Config.InfoColor + " - " + "&f" + roundStats[player.truename].Kills.ToString() + Config.InfoColor + ".");
+            string player = players[i];
+            Map.Message(Config.InfoColor + placement.ToString() + ". " + player + " - " + "&f" + roundStats[player].Kills.ToString() + Config.InfoColor + ".");
         }
 
-        players.Sort((a, b) => roundStats[a.truename].Captures.CompareTo(roundStats[b.truename].Captures));
+        players.Sort((a, b) => roundStats[a].Captures.CompareTo(roundStats[b].Captures));
         players.Reverse();
         Map.Message(Config.InfoColor + "Most Captures:");
         for (int i = 0; i < displayCount; i++)
         {
             int placement = i + 1;
-            Player player = players[i];
-            Map.Message(Config.InfoColor + placement.ToString() + ". " + player.ColoredName + Config.InfoColor + " - " + "&f" + roundStats[player.truename].Captures.ToString() + Config.InfoColor + ".");
+            string player = players[i];
+            Map.Message(Config.InfoColor + placement.ToString() + ". " + player + " - " + "&f" + roundStats[player].Captures.ToString() + Config.InfoColor + ".");
         }
     }
 
@@ -1476,6 +1492,10 @@ public class MyCTFGame : RoundsGame
     private void ResetKillstreak(Player p)
     {
         string name = p.truename;
+        if (!roundStats.ContainsKey(name))
+        {
+            return;
+        }
         MyCtfStats stats = roundStats[name];
         stats.Killstreak = 0;
         roundStats[name] = stats;
