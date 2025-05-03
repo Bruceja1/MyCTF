@@ -594,6 +594,7 @@ public class MyCTFGame : RoundsGame
 
     private void HandleJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
     {
+        HandleJoinedCommon(p, prevLevel, level, ref announce);
         OutputMapSummary(p, Map.name, Map.Config);
     }
 
