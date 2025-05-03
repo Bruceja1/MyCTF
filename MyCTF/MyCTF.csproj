@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CmdBlockSetAll.cs" />
+    <Compile Include="CmdDiscord.cs" />
     <Compile Include="CmdMcDebug.cs" />
     <Compile Include="CmdMyCTF.cs" />
     <Compile Include="CmdStatus.cs" />

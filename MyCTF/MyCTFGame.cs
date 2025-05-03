@@ -126,36 +126,21 @@ public class MyCTFGame : RoundsGame
     private static MyCtfData TryGet(Player p)
     {
         p.Extras.TryGet("MCG_MYCTF_DATA", out var value); // TODO: Why not p.Extras.TryGet(myctfExtrasKey, out var value); ?
-
-        // The original line:
-        // return (MyCtfData)value; 
-        // Caused the following exception when unloading and reloading the plugin:
-        // Type: InvalidCastException. For more details see error logs on 28/03/25 at 21:00:52
-        // I believe it has to do with leftover data in p.Extras["MCG_MYCTF_DATA"]
-        // The error only occurs after unloading and reloading the plugin
-
-        // This line fixes the error but:
-        // Works when just loading the plugin for the first time
-        // When reloading the plugin the following happens:
-        // Using /mc start bruceja7 and then using /mc status results in ObjectNullReference
-        // After the teams have been assigned using /mc status works fine
-        // Update: noticed there's a small window between teams being assigned and /mc status not returning
-        // an ObjectNullReference anymore when trying to show CtfData
         return value as MyCtfData;
     }
 
     public override void UpdateMapConfig()
     {
-        MyCTFMapConfig cTFMapConfig = new MyCTFMapConfig();
-        cTFMapConfig.SetDefaults(Map);
-        cTFMapConfig.Load(Map.name);
-        cfg = cTFMapConfig;
-        Red.FlagBlock = cTFMapConfig.RedFlagBlock;
-        Red.FlagPos = cTFMapConfig.RedFlagPos;
-        Red.SpawnPos = cTFMapConfig.RedSpawn;
-        Blue.FlagBlock = cTFMapConfig.BlueFlagBlock;
-        Blue.FlagPos = cTFMapConfig.BlueFlagPos;
-        Blue.SpawnPos = cTFMapConfig.BlueSpawn;
+        MyCTFMapConfig ctfMapConfig = new MyCTFMapConfig();
+        ctfMapConfig.SetDefaults(Map);
+        ctfMapConfig.Load(Map.name);
+        cfg = ctfMapConfig;
+        Red.FlagBlock = ctfMapConfig.RedFlagBlock;
+        Red.FlagPos = ctfMapConfig.RedFlagPos;
+        Red.SpawnPos = ctfMapConfig.RedSpawn;
+        Blue.FlagBlock = ctfMapConfig.BlueFlagBlock;
+        Blue.FlagPos = ctfMapConfig.BlueFlagPos;
+        Blue.SpawnPos = ctfMapConfig.BlueSpawn;
     }
 
     protected override List<Player> GetPlayers()
@@ -167,24 +152,20 @@ public class MyCTFGame : RoundsGame
     }
 
     public override void OutputStatus(Player p)
-    {
-        p.Message("{0} &Steam: {1} captures", Blue.ColoredName, Blue.Captures);
-        p.Message("{0} &Steam: {1} captures", Red.ColoredName, Red.Captures);
-        MyCtfData playerData = Get(p);
-        p.Message($"Captures: {playerData.Captures.ToString()}");
-        p.Message($"XP: {playerData.XP.ToString()}");
-        p.Message($"Kills: {playerData.Kills.ToString()}");       
-        p.Message($"Highest killstreak: {playerData.Killstreak.ToString()}");
-        p.Message($"Wins: {playerData.Winstreak.ToString()}");
-        p.Message($"Highest winstreak: {playerData.Winstreak.ToString()}");
-        p.Message($"HasFlag: {playerData.HasFlag.ToString()}");
-        p.Message($"TeamChatting: {playerData.TeamChatting.ToString()}");
-        p.Message($"LastHeadPos: {playerData.LastHeadPos.ToString()}");
-        p.Message($"Your team is: {(TeamOf(p) == null ? "No team" : TeamOf(p).Name)}");
-        if (currentWinstreaks.ContainsKey(p.truename))
+    {      
+        string name = p.truename;
+        if (!roundStats.ContainsKey(name) || !currentWinstreaks.ContainsKey(name))
         {
-            p.Message($"Your current winstreak is: {currentWinstreaks[p.truename]}");
+            p.Message("&cThere was an error retrieving your round stats. Tell Bruceja he is a bad coder.");
+            return;
         }
+        p.Message(Config.InfoColor + "-+- Your round stats -+-");
+        p.Message(Config.InfoColor + "Kills: &f" + roundStats[name].Kills.ToString() + Config.InfoColor + ", Captures: &f" + roundStats[name].Captures.ToString());
+        p.Message(Config.InfoColor + "Killstreak: &f" + roundStats[name].Killstreak.ToString() + Config.InfoColor + ", Winstreak: &f" + currentWinstreaks[name].ToString());
+        p.Message(Config.InfoColor + "You earned &a" + roundStats[name].XP + " XP" + Config.InfoColor + " and &f" + roundStats[name].Money + " " + Server.Config.Currency + Config.InfoColor + " so far this round.");
+
+        MyCtfTeam team = TeamOf(p);
+        p.Message(Config.InfoColor + (team == null ? "You are not on a team." : "You are on the " + team.Color + team.Name + Config.InfoColor + " team."));
     }
 
     protected override void StartGame()
@@ -203,8 +184,6 @@ public class MyCTFGame : RoundsGame
 
     private void ResetTeams()
     {
-        //Blue.Members.Clear();
-        //Red.Members.Clear();
         foreach (Player p in Blue.Members.Items)
         {
             RemoveFromTeam(p);
@@ -239,9 +218,6 @@ public class MyCTFGame : RoundsGame
 
     public override void PlayerJoinedGame(Player p)
     {
-        bool announce = false;
-        HandleJoinedLevel(p, Map, Map, ref announce);
-     
         if (!roundStats.ContainsKey(p.truename))
         {
             roundStats.Add(p.truename, new MyCtfStats());
@@ -278,7 +254,6 @@ public class MyCTFGame : RoundsGame
         MyCtfTeam ctfTeam = TeamOf(p);       
         if (ctfTeam != null)
         {
-            //ctfTeam.Members.Remove(p);
             DropFlag(p, ctfTeam);
             RemoveFromTeam(p);
             ResetPlayerColor(p);
@@ -531,7 +506,6 @@ public class MyCTFGame : RoundsGame
     {
         if (p.level != Map)
         {
-            p.Message("You are not on the map!");
             return;
         }
 
@@ -594,8 +568,9 @@ public class MyCTFGame : RoundsGame
 
     private void HandleJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
     {
-        HandleJoinedCommon(p, prevLevel, level, ref announce);
-        OutputMapSummary(p, Map.name, Map.Config);
+        PlayerJoinedGame(p);
+        OutputMapSummary(p, level.name, level.Config);
+        HandleJoinedCommon(p, prevLevel, level, ref announce);        
     }
 
     protected override void DoRound()

@@ -12,5 +12,4 @@ internal sealed class MyCtfData
     public int Winstreak;
     public bool HasFlag;
     public bool TeamChatting;
-    public Vec3S32 LastHeadPos;
 }
