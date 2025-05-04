@@ -156,7 +156,8 @@ public class MyCTFGame : RoundsGame
         string name = p.truename;
         if (!roundStats.ContainsKey(name) || !currentWinstreaks.ContainsKey(name))
         {
-            p.Message("&cThere was an error retrieving your round stats. Tell Bruceja he is a bad coder.");
+            p.Message("&cThere was an error retrieving your round stats. Likely due to a plugin reload.");
+            p.Message("&cTry again when the next round starts.");
             return;
         }
         p.Message(Config.InfoColor + "-+- Your round stats -+-");
@@ -563,16 +564,16 @@ public class MyCTFGame : RoundsGame
     }
 
     private void HandleJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
-    {
+    {      
+        PlayerJoinedGame(p);
+        OutputMapSummary(p, level.name, level.Config);
+        HandleJoinedCommon(p, prevLevel, level, ref announce);
         if (Running && !RoundInProgress)
         {
             p.Message(Config.InfoColor + "Join a team using &a/mc join blue" + Config.InfoColor + " or &a/mc join red" + Config.InfoColor + ".");
             p.Message(Config.InfoColor + "Use &a/mc leave" + Config.InfoColor + " to leave your team.");
             p.Message(Config.InfoColor + "Teamless players will automatically be assigned to a team on round start.");
         }
-        PlayerJoinedGame(p);
-        OutputMapSummary(p, level.name, level.Config);
-        HandleJoinedCommon(p, prevLevel, level, ref announce);        
     }
 
     protected override void DoRound()

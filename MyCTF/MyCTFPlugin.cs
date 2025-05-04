@@ -19,6 +19,7 @@ public sealed class MyCTFPlugin : Plugin
     private static Command cmdBlockSetAll = new CmdBlockSetAll();
     private static Command cmdStatus = new CmdStatus();
     private static Command cmdDiscord = new CmdDiscord();
+    private static Command cmdPlay = new CmdPlay();
 
     public override string name => "MyCTF";
     DBTopStat xpStat = new DBTopStat("XP", "Most XP", "MyCTF", "XP", TopStat.FormatInteger);
@@ -35,6 +36,7 @@ public sealed class MyCTFPlugin : Plugin
         Command.Register(cmdBlockSetAll);
         Command.Register(cmdStatus);
         Command.Register(cmdDiscord);
+        Command.Register(cmdPlay);
 
         TopStat.Register(xpStat);
         TopStat.Register(captureStat);
@@ -68,6 +70,7 @@ public sealed class MyCTFPlugin : Plugin
         Command.Unregister(cmdBlockSetAll);
         Command.Unregister(cmdStatus);
         Command.Unregister(cmdDiscord);
+        Command.Unregister(cmdPlay);
 
         TopStat.Unregister(xpStat);
         TopStat.Unregister(captureStat);

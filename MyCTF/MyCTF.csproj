@@ -57,6 +57,7 @@
     <Compile Include="CmdDiscord.cs" />
     <Compile Include="CmdMcDebug.cs" />
     <Compile Include="CmdMyCTF.cs" />
+    <Compile Include="CmdPlay.cs" />
     <Compile Include="CmdStatus.cs" />
     <Compile Include="CmdXP.cs" />
     <Compile Include="MyCTFConfig.cs" />
