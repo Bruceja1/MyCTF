@@ -564,6 +564,12 @@ public class MyCTFGame : RoundsGame
 
     private void HandleJoinedLevel(Player p, Level prevLevel, Level level, ref bool announce)
     {
+        if (Running && !RoundInProgress)
+        {
+            p.Message(Config.InfoColor + "Join a team using &a/mc join blue" + Config.InfoColor + " or &a/mc join red" + Config.InfoColor + ".");
+            p.Message(Config.InfoColor + "Use &a/mc leave" + Config.InfoColor + " to leave your team.");
+            p.Message(Config.InfoColor + "Teamless players will automatically be assigned to a team on round start.");
+        }
         PlayerJoinedGame(p);
         OutputMapSummary(p, level.name, level.Config);
         HandleJoinedCommon(p, prevLevel, level, ref announce);        
@@ -796,7 +802,7 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-    // TODO: use built-in CpeMessage announce type
+
     protected void Countdown()
     {
         DateTime startTime = DateTime.UtcNow;
@@ -912,9 +918,9 @@ public class MyCTFGame : RoundsGame
         {
             while (Running && RoundsLeft > 0)
             {
+                RoundInProgress = false;
                 ResetFlagsState();
                 Countdown();
-                RoundInProgress = false;
                 if (RoundsLeft != int.MaxValue)
                 {
                     RoundsLeft--;
