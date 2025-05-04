@@ -276,25 +276,21 @@ public class MyCTFGame : RoundsGame
             JoinTeam(p, Red);
             return;
         }
-
         if (Red.Captures > Blue.Captures)
         {
             JoinTeam(p, Blue);
             return;
         }
-
         if (Blue.Members.Count > Red.Members.Count)
         {
             JoinTeam(p, Red);
             return;
         }
-
         if (Red.Members.Count > Blue.Members.Count)
         {
             JoinTeam(p, Blue);
             return;
         }
-
         bool flag = new Random().Next(2) == 0;
         JoinTeam(p, flag ? Red : Blue);
     }
@@ -584,7 +580,7 @@ public class MyCTFGame : RoundsGame
             Player[] array = items;
             foreach (Player player in array)
             {
-                if (player.level == Map)
+                if (player.level == Map && !player.Game.Referee)
                 {                   
                     PlayerJoinedGame(player);
                                       
@@ -1425,7 +1421,7 @@ public class MyCTFGame : RoundsGame
         {
             int placement = i + 1;
             string player = players[i];
-            Map.Message(Config.InfoColor + placement.ToString() + ". " + player + " - " + "&f" + roundStats[player].Kills.ToString() + Config.InfoColor + ".");
+            Map.Message(Config.InfoColor + placement.ToString() + ". &t" + player + Config.InfoColor + " - " + "&f" + roundStats[player].Kills.ToString() + Config.InfoColor + ".");
         }
 
         players.Sort((a, b) => roundStats[a].Captures.CompareTo(roundStats[b].Captures));
@@ -1435,7 +1431,7 @@ public class MyCTFGame : RoundsGame
         {
             int placement = i + 1;
             string player = players[i];
-            Map.Message(Config.InfoColor + placement.ToString() + ". " + player + " - " + "&f" + roundStats[player].Captures.ToString() + Config.InfoColor + ".");
+            Map.Message(Config.InfoColor + placement.ToString() + ". &t" + player + Config.InfoColor + " - " + "&f" + roundStats[player].Captures.ToString() + Config.InfoColor + ".");
         }
     }
 
