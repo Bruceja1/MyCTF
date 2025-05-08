@@ -787,7 +787,6 @@ public class MyCTFGame : RoundsGame
         {
             if (opponentPos == opponentTeam.SpawnPos)
             {
-                p.Message("&cSpawnkilling is not allowed!");
                 return;
             }
             string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
@@ -822,18 +821,9 @@ public class MyCTFGame : RoundsGame
 
             Thread.Sleep(100); // Prevents the while loop from freezing the server
 
-            if (elapsedTime.Seconds % 10 == 0)
+            if (elapsedTime.Seconds % 10 == 0 || (Config.CountdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0))
             {
-                foreach (Player p in PlayerInfo.Online.Items)
-                {
-                    p.SendCpeMessage(CpeMessageType.Announcement, message);
-                }
-            }
-
-            // When the countdown reaches 5, announce the time left every second instead of every ten seconds.
-            if (Config.CountdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0)
-            {
-                foreach (Player p in PlayerInfo.Online.Items)
+                foreach (Player p in Map.players)
                 {
                     p.SendCpeMessage(CpeMessageType.Announcement, message);
                 }
@@ -854,7 +844,7 @@ public class MyCTFGame : RoundsGame
 
         if (playerCount >= 2)
         {
-            foreach (Player p in PlayerInfo.Online.Items)
+            foreach (Player p in Map.players)
             {
                 p.SendCpeMessage(CpeMessageType.Announcement, "&aGood luck!");
             }
@@ -863,7 +853,7 @@ public class MyCTFGame : RoundsGame
 
         else
         {
-            foreach (Player p in PlayerInfo.Online.Items)
+            foreach (Player p in Map.players)
             {
                 p.SendCpeMessage(CpeMessageType.Announcement, "&4Need &f2 &4or more players to start!");
             }
@@ -872,9 +862,7 @@ public class MyCTFGame : RoundsGame
             {
                 Thread.Sleep(5000);
                 Countdown();
-                return;
             }
-            return;
         }
     }
 
@@ -1262,7 +1250,7 @@ public class MyCTFGame : RoundsGame
             return 100;
         }
         Group previousRank = GetPreviousOrNextRank(rank, true);
-        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.42) + 100;        
+        return (int)Math.Round(GetNextRankRequirement(previousRank) * 1.6) + 100;        
     }
 
     private Group GetPreviousOrNextRank(Group rank, bool previous)
@@ -1404,6 +1392,10 @@ public class MyCTFGame : RoundsGame
 
     private void DisplayRoundStats(Player p)
     {
+        if (!roundStats.ContainsKey(p.truename))
+        {
+            return;
+        }
         string name = p.truename;
         int kills = roundStats[name].Kills;
         int captures = roundStats[name].Captures;

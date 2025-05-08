@@ -47,12 +47,12 @@ public class AwardsHandler : Plugin
 
     void HandleKill(Player p, int totalKills, int roundKills, int totalKillstreak, double timeSinceLastKill)
     {
-        if (roundKills >= 30 && !HasAward(p, "Exterminator"))
+        if (roundKills >= 50 && !HasAward(p, "Exterminator"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Exterminator");
             OnAchievementGetEvent.Call(p, "Exterminator");
         }
-        if (totalKillstreak >= 10 && !HasAward(p, "Menace"))
+        if (totalKillstreak >= 25 && !HasAward(p, "Menace"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Menace");
             OnAchievementGetEvent.Call(p, "Menace");
@@ -66,7 +66,7 @@ public class AwardsHandler : Plugin
 
     void HandleCapture(Player p, int totalCaptures, int roundCaptures)
     {
-        if (roundCaptures >= 3 && !HasAward(p, "Bringing It Home"))
+        if (roundCaptures >= 5 && !HasAward(p, "Bringing It Home"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " Bringing It Home");
             OnAchievementGetEvent.Call(p, "Bringing It Home");
@@ -108,7 +108,7 @@ public class AwardsHandler : Plugin
 
     void HandleDeath(Player p, ushort cause, ref TimeSpan cooldown)
     {
-        if (p.TimesDied >= 1000 && !HasAward(p, "The True Geometry Dash Experience"))
+        if (p.TimesDied >= 10000 && !HasAward(p, "The True Geometry Dash Experience"))
         {
             Command.Find("award").Use(Player.Console, "give " + p.truename + " The True Geometry Dash Experience");
             OnAchievementGetEvent.Call(p, "The True Geometry Dash Experience");
