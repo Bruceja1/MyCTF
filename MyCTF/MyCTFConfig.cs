@@ -12,6 +12,9 @@ public sealed class MyCTFConfig : RoundsGameConfig
     [ConfigInt("collisions-check-interval", "Collisions", 150, 20, 2000)]
     public int CollisionsCheckInterval = 150;
 
+    [ConfigFloat("flag-carry-speed", "Game properties", (float)0.7)]
+    public float FlagCarrySpeed = (float)0.7;
+
     [ConfigInt("countdown-timer", "Game properties", 30)]
     public int CountdownTimer = 30;
 

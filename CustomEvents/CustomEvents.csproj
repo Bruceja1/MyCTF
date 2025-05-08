@@ -54,6 +54,8 @@
     <Compile Include="OnCTFPlayerInfoUpdated.cs" />
     <Compile Include="OnCTFPlayerInfoUpdatedEvent.cs" />
     <Compile Include="OnCapture.cs" />
+    <Compile Include="OnFlagGrab.cs" />
+    <Compile Include="OnFlagGrabEvent.cs" />
     <Compile Include="OnKill.cs" />
     <Compile Include="OnCaptureEvent.cs" />
     <Compile Include="OnKillEvent.cs" />

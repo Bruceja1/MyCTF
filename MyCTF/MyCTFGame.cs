@@ -583,7 +583,7 @@ public class MyCTFGame : RoundsGame
             roundStats.Clear();
             timer.Set(cfg.Time);
             RoundInProgress = true;
-            Player[] items = PlayerInfo.Online.Items;
+            Player[] items = Map.players.ToArray();
             Player[] array = items;
             foreach (Player player in array)
             {
@@ -730,6 +730,8 @@ public class MyCTFGame : RoundsGame
         ctfData.HasFlag = true;
         SpawnFlagBot(p);
         DrawPlayerFlag(p, ctfData);
+        p.Session.SendMotd(Server.Config.MOTD + " horspeed=" + Config.FlagCarrySpeed);
+        p.SendCpeMessage(CpeMessageType.SmallAnnouncement, "&4The flag has lowered your speed!");
     }
 
     private void ReturnFlag(Player p, MyCtfTeam team)
@@ -746,6 +748,7 @@ public class MyCTFGame : RoundsGame
             Command.Find("Announce").Use(Player.Console, "global " + message);
 
             ctfData.HasFlag = false;
+            p.Session.SendMotd(Server.Config.MOTD);
             ResetPlayerFlag(p, ctfData);
             //ctfData.Points += cfg.Capture_PointsGained;
             team.Captures++;
@@ -769,6 +772,7 @@ public class MyCTFGame : RoundsGame
             MyCtfTeam opposing = Opposing(team);
             string message = team.Color + p.DisplayName + Config.InfoColor + " has dropped the " + opposing.Color + opposing.Name + Config.InfoColor + " team's flag!";          
             ctfData.HasFlag = false;
+            p.Session.SendMotd(Server.Config.MOTD);
             ResetPlayerFlag(p, ctfData);
             Map.Message(message);
             Command.Find("Announce").Use(Player.Console, "global " + message);
@@ -792,7 +796,7 @@ public class MyCTFGame : RoundsGame
             string deathMessage = opponent.ColoredName + Config.InfoColor + " was killed by " + p.ColoredName!;
             if (opponent.HandleDeath(4, GetKillstreakMessage(p)))
             {              
-                Map.Message(deathMessage);
+                Chat.MessageGlobal(deathMessage);
                 AwardXP(p, Config.KillXPReward);
                 IncreaseStat(p, "Kills");               
                 ResetKillstreak(opponent);
