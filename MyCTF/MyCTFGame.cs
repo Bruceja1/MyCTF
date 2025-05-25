@@ -806,58 +806,51 @@ public class MyCTFGame : RoundsGame
         }
     }
 
-
     protected void Countdown()
-    {
-        DateTime startTime = DateTime.UtcNow;
-        DateTime now = DateTime.UtcNow;
-        TimeSpan elapsedTime = now - startTime;
-
-        string message = "";
-
-        while (elapsedTime.Seconds < Config.CountdownTimer)
+    {       
+        while (true)
         {
-            if (!Running | RoundInProgress)
-            {
-                return;
-            }
-            message = $"&bMatch starts in &f{Config.CountdownTimer - elapsedTime.Seconds} &bseconds!";
+            DateTime startTime = DateTime.UtcNow;
+            DateTime now = DateTime.UtcNow;
+            TimeSpan elapsedTime = now - startTime;
 
-            Thread.Sleep(100); // Prevents the while loop from freezing the server
-
-            if (elapsedTime.Seconds % 10 == 0 || (Config.CountdownTimer - elapsedTime.Seconds <= 5 && elapsedTime.Seconds % 1 == 0))
+            while (elapsedTime.Seconds < Config.CountdownTimer)
             {
-                foreach (Player p in Map.players)
+                if (!Running | RoundInProgress)
                 {
-                    p.SendCpeMessage(CpeMessageType.Announcement, message);
+                    return;
+                }
+
+                Thread.Sleep(100); // Prevents the while loop from freezing the server
+
+                if (elapsedTime.Seconds % 10 == 0 || (Config.CountdownTimer - elapsedTime.Seconds <= 5))
+                {
+                    foreach (Player p in Map.players)
+                    {
+                        p.SendCpeMessage(CpeMessageType.Announcement, $"&bMatch starts in &f{Config.CountdownTimer - elapsedTime.Seconds} &bseconds!");
+                    }
+                }
+
+                now = DateTime.UtcNow;
+                elapsedTime = now - startTime;
+            }
+            
+            List<Player> players = Map.players;
+            int playerCount = players.Count;
+            foreach (Player p in players)
+            {
+                if (p.IsAfk || p.Game.Referee)
+                {
+                    playerCount--;
                 }
             }
 
-            now = DateTime.UtcNow;
-            elapsedTime = now - startTime;
-        }
-
-        int playerCount = 0;
-        foreach (Player pl in Map.players)
-        {
-            if (!pl.IsAfk && !pl.Game.Referee)
+            if (playerCount >= 2)
             {
-                playerCount++;
+                break;
             }
-        }
 
-        if (playerCount >= 2)
-        {
-            foreach (Player p in Map.players)
-            {
-                p.SendCpeMessage(CpeMessageType.Announcement, "&aGood luck!");
-            }
-            return;
-        }
-
-        else
-        {
-            foreach (Player p in Map.players)
+            foreach (Player p in players)
             {
                 p.SendCpeMessage(CpeMessageType.Announcement, "&4Need &f2 &4or more players to start!");
             }
@@ -865,9 +858,14 @@ public class MyCTFGame : RoundsGame
             if (Running)
             {
                 Thread.Sleep(5000);
-                Countdown();
             }
         }
+
+        foreach (Player p in Map.players)
+        {
+            p.SendCpeMessage(CpeMessageType.Announcement, "&aGood luck!");
+        }
+        return;
     }
 
     // Override start
